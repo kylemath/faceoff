@@ -1,7 +1,7 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, Stack, TextContainer, RangeSlider} from "@shopify/polaris";
+import { Card, RangeSlider} from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -123,20 +123,6 @@ export function renderModule(channels) {
 
   return (
     <Card title={specificTranslations.title}>
-
-      <Card.Section>
-        <Stack>
-          <TextContainer>
-            <p>{specificTranslations.description}</p>
-          </TextContainer>
-          <img 
-            src={ require("./electrodediagram2.png")} 
-            alt="F7Electrode"
-            width="25%"
-            height="auto"
-          ></img>
-        </Stack>
-      </Card.Section>
       <Card.Section>
         <div style={chartStyles.wrapperStyle.style}>{RenderCharts()}</div>
       </Card.Section>
