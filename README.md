@@ -1,4 +1,31 @@
-# EEGEdu
+# LaGS-BS
+Latent GAN State Brain Surfer
+
+The brain is full of all the patterns we could ever need
+
+https://colab.research.google.com/drive/17HvdPhwhe1cmkTWnA50vyOmMlWHhg6_P?usp=sharing
+
+latence space brain surfer
+
+start as webapp
+
+tensorflow.js? load a pretrained model, input vectors to it, output images
+
+then we can connect with bluetoothweb and use muse-js and neurosity-pipes
+
+plus this video at this moment Trash | Off the Air | adult swimTrash | Off the Air | adult swim
+
+https://youtu.be/BGSUYAKquBU?t=114
+
+Amazing... then we connect with talkgenerator.com and watch our thoughts
+
+ok hardest part first how does EEG stack connect to tensorflow.js output vector from eeg stack input to tensorflow
+
+pulling out the five elements alpha beta gamma delta kapa and then pipe that right in
+
+yeah specifically the "pipe in" how does a live tensorflow compute work
+
+we could use peoples webcams to seed it isntead you can project an image into the latent space and find nearest approximation but it takes a few seconds
 
 <p align="center"> 
 <a href="https://github.com/kylemath/EEGEdu/blob/master/LICENSE" target="_blank">
