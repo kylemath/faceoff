@@ -7,6 +7,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@babel/plugin-transform-react-jsx": "^7.12.7",
     "@neurosity/pipes": "^3.0.2",
     "@shopify/polaris": "^4.9.0",
     "chart.js": "^2.7.2",
