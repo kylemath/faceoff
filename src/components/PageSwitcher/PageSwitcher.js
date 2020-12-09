@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { MuseClient } from "muse-js";
-import { Select, Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/polaris";
+import { Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/polaris";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 import * as translations from "./translations/en.json";
@@ -22,7 +22,7 @@ export function PageSwitcher() {
   } else {
     window.nchans = 4;
   }
-  let showAux = true; // if it is even available to press (to prevent in some modules)
+  let showAux = false; // if it is even available to press (to prevent in some modules)
 
   // data pulled out of multicast$
   const [spectroData, setSpectroData] = useState(emptyAuxChannelData);
@@ -34,45 +34,14 @@ export function PageSwitcher() {
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(spectro);
-  const handleSelectChange = useCallback(value => {
-    setSelected(value);
-
-    console.log("Switching to: " + value);
-
-    if (window.subscriptionSpectro) window.subscriptionSpectro.unsubscribe();
-
-    subscriptionSetup(value);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  switch (selected) {
-    case spectro:
-      showAux = false;
-      break
-    default:
-      console.log("Error on showAux");
-  }
-
-
-  const chartTypes = [
-    { label: spectro, value: spectro },
-  ];
-
+  const [selected] = useState(spectro);
+    
   function buildPipes(value) {
     funSpectro.buildPipe(spectroSettings);
   }
 
   function subscriptionSetup(value) {
-    switch (value) {      
-      case spectro: 
-        funSpectro.setup(setSpectroData, spectroSettings);
-        break;
-      default:
-        console.log(
-          "Error on handle Subscriptions. Couldn't switch to: " + value
-        );
-    }
+    funSpectro.setup(setSpectroData, spectroSettings);
   }
 
   async function connect() {
@@ -110,34 +79,6 @@ export function PageSwitcher() {
 
   function refreshPage(){
     window.location.reload();
-  }
-
-  function pipeSettingsDisplay() {
-    switch(selected) {
-      case spectro:
-        return (
-          funSpectro.renderSliders(setSpectroData, setSpectroSettings, status, spectroSettings)
-        );
-      default: console.log('Error rendering settings display');
-    }
-  }
-
-  function renderModules() {
-    switch (selected) {
-      case spectro:
-        return <funSpectro.renderModule data={spectroData} />;
-      default:
-        console.log("Error on renderCharts switch.");
-    }
-  }
- 
-  function renderRecord() {
-    switch (selected) {
-       case spectro:
-        return null
-      default:   
-        console.log("Error on renderRecord.");
-    }
   }
 
   // Render the entire page using above functions
@@ -182,17 +123,8 @@ export function PageSwitcher() {
           />
         </Stack>
       </Card>
-      <Card title={translations.title} sectioned>
-        <Select
-          label={""}
-          options={chartTypes}
-          onChange={handleSelectChange}
-          value={selected}
-        />
-      </Card>
-      {pipeSettingsDisplay()}
-      {renderModules()}
-      {renderRecord()}
+      {funSpectro.renderSliders(setSpectroData, setSpectroSettings, status, spectroSettings)}
+      <funSpectro.renderModule data={spectroData} />
     </React.Fragment>
   );
 }
