@@ -99,7 +99,6 @@ export function PageSwitcher() {
   return (
     <React.Fragment>
       <Card sectioned>
-        <Canvas draw={draw} />
         <Stack>
           <ButtonGroup>
             <Button
@@ -139,6 +138,9 @@ export function PageSwitcher() {
             disabled={!showAux || status !== generalTranslations.connect}
           />
         </Stack>
+      </Card>
+      <Card sectioned>
+        <Canvas draw={draw} />
       </Card>
       {funSpectro.renderSliders(setSpectroData, setSpectroSettings, status, spectroSettings)}
       <funSpectro.renderModule data={spectroData} />
