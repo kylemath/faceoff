@@ -69,6 +69,7 @@ async function computing_animate_latent_space(model, draw_multiplier, animate_fr
         i++;
         const y = tf.tidy(() => {
             const z = tf.sin(tf.scalar(i).mul(freq).add(shift));
+            console.log('latent', z);
             const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(.5));
             return image_enlarge(y, draw_multiplier);
         });
@@ -81,6 +82,7 @@ async function computing_animate_latent_space(model, draw_multiplier, animate_fr
 async function computing_generate_main(model, size, draw_multiplier, latent_dim) {
     const y = tf.tidy(() => {
         const z = tf.randomNormal([1, latent_dim]);
+        console.log('latent', z);
         const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
         return image_enlarge(y, draw_multiplier);
 
