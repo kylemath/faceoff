@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tensorflow.js 2.0.0 GAN Demo</title>
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/css/materialize.min.css"
+    />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body>
+    <div class="container">
+      <nav>
+        <div class="nav-wrapper white lighten-5 ">
+          <a href="#" class="brand-logo center teal-text text-darken-3"
+            >A freaking GAN Demo in TFjs 2</a
+          >
+
+          <ul id="nav-mobile" class="right">
+            <li>
+              <a
+                href="https://en.wikipedia.org/wiki/Tom_Morello"
+                class="teal-text text-darken-3"
+                >by Tom "The Hot Sauce Guy" Moreno</a
+              >
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="row main-row card-panel">
+        <div class="col s12 m12 l7">
+          <div class="generation-panel">
+            <div
+              class="canvas-wrapper"
+              id="canvas-wrapper"
+              width="256"
+              height="256"
+            >
+              <canvas id="the_canvas" width="256" height="256">
+                Your browser does not support the canvas element.
+              </canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col s12 m12 l5">
+          <div class="control-panel">
+            <div class="row">
+              <div class="col s12">
+                <h5>Load Saved Model</h5>
+                <p>↓ Click to select a <b>better</b> (and larger) model</p>
+                <div class="input-field">
+                  <select id="model-select"> </select>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col s6">
+                <h5>Action</h5>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col s6">
+                <button
+                  class="waves-effect waves-light btn col s12 btn-large disabled"
+                  id="generate-button"
+                ></button>
+              </div>
+              <div class="col s6">
+                <button
+                  class="waves-effect waves-light btn col s12 btn-large disabled"
+                  id="animate-button"
+                ></button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col s12">
+                <h5>Status</h5>
+                <p class="logging" id="logging"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script src="index.js"></script>
+  </body>
+</html>
