@@ -1,4 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
+
 // Gan Stuff
 
 let all_model_info = {
@@ -28,15 +29,15 @@ let all_model_info = {
     }
 };
 
-// function computing_prep_canvas(size) {
-//     // We don't `return tf.image.resizeBilinear(v1, [size * draw_multiplier, size * draw_multiplier]);`
-//     // since that makes image blurred, which is not what we want.
-//     // So instead, we manually enlarge the image.
-//     let canvas = document.getElementById("the_canvas");
-//     let ctx = canvas.getContext("2d");
-//     ctx.canvas.width = size;
-//     ctx.canvas.height = size;
-// }
+function computing_prep_canvas(size) {
+    // We don't `return tf.image.resizeBilinear(v1, [size * draw_multiplier, size * draw_multiplier]);`
+    // since that makes image blurred, which is not what we want.
+    // So instead, we manually enlarge the image.
+    let canvas = document.getElementById("the_canvas");
+    let ctx = canvas.getContext("2d");
+    ctx.canvas.width = size;
+    ctx.canvas.height = size;
+}
 
 function image_enlarge(y, draw_multiplier) {
     if (draw_multiplier === 1) {
@@ -58,10 +59,10 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim)
         return image_enlarge(y, draw_multiplier);
 
     });
-    // let c = document.getElementById("the_canvas");
-    // await tf.toPixels(y, c);   
-    await console.log(tf.toPixels(y))
-
+    let c = document.getElementById("the_canvas");
+    console.log('canvas', c);
+    console.log('image generated, image data: ', y);
+    await tf.toPixels(y, c);
 }
 
 const ui_delay_before_tf_computing_ms = 2000;  // Delay that many ms before tf computing, which can block UI drawing.
@@ -91,7 +92,9 @@ export class ModelRunner {
             draw_multiplier = model_info.draw_multiplier,
             description = model_info.description;
 
-        // computing_prep_canvas(model_size * draw_multiplier);
+        computing_prep_canvas(model_size * draw_multiplier);
+        console.log(`Setting up model ${description}`);
+
         // ui_set_canvas_wrapper_size(model_size * draw_multiplier);
         // ui_logging_set_text(`Setting up model ${description}...`);
 
@@ -109,18 +112,21 @@ export class ModelRunner {
                 // ui_generate_button_enable();
                 // ui_animate_button_enable();
                 // ui_logging_set_text(`Model "${description}" is ready.`);
+                console.log(`Model "${description} is ready.`);
             });
             this.model_promise_cache[model_name] = this.model_promise;
         }
     }
 
-    generate(canvas) {
+    generate() {
         let model_info = all_model_info[this.model_name];
         let model_size = model_info.model_size,
             model_latent_dim = model_info.model_latent_dim,
             draw_multiplier = model_info.draw_multiplier;
 
-        // computing_prep_canvas(model_size * draw_multiplier);
+        computing_prep_canvas(model_size * draw_multiplier);
+
+        console.log('Generating image...');
 
         // ui_logging_set_text('Generating image...');
         // ui_generate_button_disable('Generating...');
@@ -139,11 +145,3 @@ export class ModelRunner {
         });
     }
 }
-
-
-
-
-
-
-
-

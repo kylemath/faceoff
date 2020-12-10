@@ -55,7 +55,7 @@ export function PageSwitcher() {
 
   // for picking a new module
   const [selected] = useState(spectro);
-    
+
   async function connect() {
     try {
       if (window.debugWithMock) {
@@ -129,7 +129,7 @@ export function PageSwitcher() {
               disabled={status === generalTranslations.connect}
             >
               {generalTranslations.disconnect}
-            </Button>     
+            </Button>
           </ButtonGroup>
           <Checkbox
             label="Enable Muse Auxillary Channel"

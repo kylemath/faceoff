@@ -10,22 +10,30 @@ const Canvas = props => {
   useEffect(() => {
     const canvas = canvasRef.current
     const context = canvas.getContext('2d')
-    let frameCount = 0
-    let animationFrameId
+    //Our first draw
+    context.fillStyle = '#000000'
+    context.fillRect(0, 0, context.canvas.width, context.canvas.height)
+  }, [])
 
-    const render = () => {
-      frameCount++
-      draw(canvas, context, frameCount)
-      animationFrameId = window.requestAnimationFrame(render)
-    }
-    render()
+  // useEffect(() => {
+  //   const canvas = canvasRef.current
+  //   const context = canvas.getContext('2d')
+  //   let frameCount = 0
+  //   let animationFrameId
 
-    return () => {
-      window.cancelAnimationFrame(animationFrameId)
-    }
-  }, [draw])
+  //   const render = () => {
+  //     frameCount++
+  //     draw(canvas, context, frameCount)
+  //     animationFrameId = window.requestAnimationFrame(render)
+  //   }
+  //   render()
 
-  return <canvas ref={canvasRef} {...rest}/>
+  //   return () => {
+  //     window.cancelAnimationFrame(animationFrameId)
+  //   }
+  // }, [draw])
+
+  return <canvas id="the_canvas" ref={canvasRef} {...rest}/>
 }
 
 export default Canvas
