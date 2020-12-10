@@ -68,11 +68,14 @@ export function PageSwitcher() {
           const z = tf.randomNormal([1, latent_dim]);
           console.log(z)
           const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
+          console.log(y)
           return image_enlarge(y, draw_multiplier);
 
       });
       // let c = document.getElementById("the_canvas");
       // await tf.toPixels(y, c);   
+      await console.log(tf.toPixels(y))
+
   }
 
   const ui_delay_before_tf_computing_ms = 2000;  // Delay that many ms before tf computing, which can block UI drawing.
