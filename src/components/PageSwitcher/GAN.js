@@ -28,15 +28,15 @@ let all_model_info = {
     }
 };
 
-function computing_prep_canvas(size) {
-    // We don't `return tf.image.resizeBilinear(v1, [size * draw_multiplier, size * draw_multiplier]);`
-    // since that makes image blurred, which is not what we want.
-    // So instead, we manually enlarge the image.
-    let canvas = document.getElementById("the_canvas");
-    let ctx = canvas.getContext("2d");
-    ctx.canvas.width = size;
-    ctx.canvas.height = size;
-}
+// function computing_prep_canvas(size) {
+//     // We don't `return tf.image.resizeBilinear(v1, [size * draw_multiplier, size * draw_multiplier]);`
+//     // since that makes image blurred, which is not what we want.
+//     // So instead, we manually enlarge the image.
+//     let canvas = document.getElementById("the_canvas");
+//     let ctx = canvas.getContext("2d");
+//     ctx.canvas.width = size;
+//     ctx.canvas.height = size;
+// }
 
 function image_enlarge(y, draw_multiplier) {
     if (draw_multiplier === 1) {
@@ -114,7 +114,7 @@ export class ModelRunner {
         }
     }
 
-    generate() {
+    generate(canvas) {
         let model_info = all_model_info[this.model_name];
         let model_size = model_info.model_size,
             model_latent_dim = model_info.model_latent_dim,
