@@ -9,9 +9,29 @@ import { emptyAuxChannelData } from "./components/chartOptions";
 
 import * as funSpectro from "./components/EEGEduSpectro/EEGEduSpectro";
 
+import Canvas from './Canvas'
+
+import * as funGAN from './GAN'
+
 const spectro = translations.types.spectro;
 
+const draw = (cnv, ctx, frameCount) => {
+
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+  ctx.fillStyle = '#000000'
+  ctx.beginPath()
+  ctx.arc(50, 100, 20*Math.sin(frameCount*0.05)**2, 0, 2*Math.PI)
+  ctx.fill()
+}
+
+let model_runner = new funGAN.ModelRunner();
+let model_name = 'dcgan64';
+
+
 export function PageSwitcher() {
+
+
+//Old stuff
 
   // For auxEnable settings
   const [checked, setChecked] = useState(false);
@@ -35,14 +55,6 @@ export function PageSwitcher() {
 
   // for picking a new module
   const [selected] = useState(spectro);
-    
-  function buildPipes(value) {
-    funSpectro.buildPipe(spectroSettings);
-  }
-
-  function subscriptionSetup(value) {
-    funSpectro.setup(setSpectroData, spectroSettings);
-  }
 
   async function connect() {
     try {
@@ -68,8 +80,10 @@ export function PageSwitcher() {
         window.source.connectionStatus.value === true &&
         window.source.eegReadings$
       ) {
-        buildPipes(selected);
-        subscriptionSetup(selected);
+
+        funSpectro.buildPipe(spectroSettings);
+        funSpectro.setup(setSpectroData, spectroSettings);
+
       }
     } catch (err) {
       setStatus(generalTranslations.connect);
@@ -102,6 +116,8 @@ export function PageSwitcher() {
               onClick={() => {
                 window.debugWithMock = true;
                 connect();
+                model_runner.setup_model(model_name)
+                model_runner.generate();
               }}
             >
               {status === generalTranslations.connect ? generalTranslations.connectMock : status}
@@ -113,7 +129,7 @@ export function PageSwitcher() {
               disabled={status === generalTranslations.connect}
             >
               {generalTranslations.disconnect}
-            </Button>     
+            </Button>
           </ButtonGroup>
           <Checkbox
             label="Enable Muse Auxillary Channel"
@@ -122,6 +138,9 @@ export function PageSwitcher() {
             disabled={!showAux || status !== generalTranslations.connect}
           />
         </Stack>
+      </Card>
+      <Card sectioned>
+        <Canvas draw={draw} />
       </Card>
       {funSpectro.renderSliders(setSpectroData, setSpectroSettings, status, spectroSettings)}
       <funSpectro.renderModule data={spectroData} />
