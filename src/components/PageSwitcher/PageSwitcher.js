@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { MuseClient } from "muse-js";
 import { Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/polaris";
 
@@ -12,6 +12,43 @@ import * as funSpectro from "./components/EEGEduSpectro/EEGEduSpectro";
 import * as tf from '@tensorflow/tfjs';
 
 const spectro = translations.types.spectro;
+
+
+const Canvas = props => {
+  const canvasRef = useRef(null)
+
+  const draw = ctx => {
+    ctx.fillStyle = '#000000'
+    ctx.beginPath()
+    ctx.arc(50, 100, 20, 0, 2*Math.PI)
+    ctx.fill()
+  }
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const context = canvas.getContext('2d')
+    let frameCount = 0
+    let animationFrameId
+
+    const render = () => {
+      frameCount++
+      draw(context, frameCount)
+      animationFrameId = window.requestAnimationFrame(render)
+    }
+    render()
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId)
+    }
+  }, [draw])
+
+  return <canvas ref={canvasRef} {...props}/>
+  console.log('ping')
+}
+
+// export default Canvas
+
+
 
 export function PageSwitcher() {
 
@@ -42,15 +79,15 @@ export function PageSwitcher() {
       }
   };
 
-  // function computing_prep_canvas(size) {
-  //     // We don't `return tf.image.resizeBilinear(v1, [size * draw_multiplier, size * draw_multiplier]);`
-  //     // since that makes image blurred, which is not what we want.
-  //     // So instead, we manually enlarge the image.
-  //     let canvas = document.getElementById("the_canvas");
-  //     let ctx = canvas.getContext("2d");
-  //     ctx.canvas.width = size;
-  //     ctx.canvas.height = size;
-  // }
+  function computing_prep_canvas(size) {
+      // We don't `return tf.image.resizeBilinear(v1, [size * draw_multiplier, size * draw_multiplier]);`
+      // since that makes image blurred, which is not what we want.
+      // So instead, we manually enlarge the image.
+      let canvas = document.getElementById("the_canvas");
+      let ctx = canvas.getContext("2d");
+      ctx.canvas.width = size;
+      ctx.canvas.height = size;
+  }
 
   function image_enlarge(y, draw_multiplier) {
       if (draw_multiplier === 1) {
@@ -225,6 +262,7 @@ export function PageSwitcher() {
   return (
     <React.Fragment>
       <Card sectioned>
+        <Canvas />
         <Stack>
           <ButtonGroup>
             <Button
