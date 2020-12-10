@@ -91,7 +91,7 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim)
     await tf.browser.toPixels(y, c);
 }
 
-const ui_delay_before_tf_computing_ms = 2000;  // Delay that many ms before tf computing, which can block UI drawing.
+const ui_delay_before_tf_computing_ms = 10;  // Delay that many ms before tf computing, which can block UI drawing.
 
 function resolve_after_ms(x, ms) {
     return new Promise(resolve => {
