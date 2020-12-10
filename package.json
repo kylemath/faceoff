@@ -26,8 +26,8 @@
     "react-p5-wrapper": "^2.0.0",
     "react-scripts": "^3.2.0",
     "react-youtube": "^7.9.0",
-    "rxjs": "^6.5.3", 
-    "@tensorflow/tfjs": "0.10.0"
+    "rxjs": "^6.5.3",
+    "@tensorflow/tfjs": "2.7.0"
   },
   "scripts": {
     "start": "react-scripts --max_old_space_size=4096 start",

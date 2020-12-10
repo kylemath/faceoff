@@ -62,10 +62,10 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim)
     let c = document.getElementById("the_canvas");
     console.log('canvas', c);
     console.log('image generated, image data: ', y);
-    await tf.toPixels(y, c);
+    await tf.browser.toPixels(y, c);
 }
 
-const ui_delay_before_tf_computing_ms = 2000;  // Delay that many ms before tf computing, which can block UI drawing.
+const ui_delay_before_tf_computing_ms = 20;  // Delay that many ms before tf computing, which can block UI drawing.
 
 function resolve_after_ms(x, ms) {
     return new Promise(resolve => {
@@ -105,7 +105,7 @@ export class ModelRunner {
             // ui_generate_button_disable('Loading...');
             // ui_animate_button_disable('Loading...');
             // ui_logging_set_text(`Loading model "${description}"...`);
-            this.model_promise = tf.loadModel(model_url);
+            this.model_promise = tf.loadLayersModel(model_url);
             this.model_promise.then((model) => {
                 return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
             }).then((model) => {
