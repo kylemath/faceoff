@@ -14,6 +14,16 @@ import * as tf from '@tensorflow/tfjs';
 const spectro = translations.types.spectro;
 
 
+
+
+
+
+
+
+
+
+//Canvas Stuff
+//https://medium.com/@pdx.lucasm/canvas-with-react-js-32e133c05258
 const Canvas = props => {
   const canvasRef = useRef(null)
 
@@ -50,7 +60,22 @@ const Canvas = props => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 export function PageSwitcher() {
+
+
+// Gan Stuff
 
   let all_model_info = {
       dcgan64: {
@@ -195,6 +220,24 @@ export function PageSwitcher() {
 
 
   let model_name = 'dcgan64';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//Old stuff
+
+
+
 
   // For auxEnable settings
   const [checked, setChecked] = useState(false);
