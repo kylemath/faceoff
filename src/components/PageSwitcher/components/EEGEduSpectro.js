@@ -13,14 +13,9 @@ import {
   sliceFFT
 } from "@neurosity/pipes";
 
-import { chartStyles } from "../chartOptions";
+import { chartStyles } from "./chartOptions";
 
-import * as generalTranslations from "../translations/en";
-import * as specificTranslations from "./translations/en";
-
-import sketchSpectro from './sketchSpectro'
-
-import P5Wrapper from 'react-p5-wrapper';
+import * as generalTranslations from "./translations/en";
 
 export function getSettings () {
   return {
@@ -91,6 +86,7 @@ export function setup(setData, Settings) {
 }
 
 export function renderModule(channels) {
+  
   function RenderCharts() {
     return Object.values(channels.data).map((channel, index) => {
       if (channel.datasets[0].data) {
@@ -106,12 +102,7 @@ export function renderModule(channels) {
         return (
           <React.Fragment key={'dum'}>
             <Card.Section>
-              {window.freqs.slice(-1)[0] + ' Hz'}
-              <P5Wrapper sketch={sketchSpectro} 
-                psd={window.psd}
-                bins={window.bins}
-                 />   
-              {window.freqs[0] + ' Hz'}       
+
             </Card.Section>
           </React.Fragment>
         );
@@ -122,7 +113,7 @@ export function renderModule(channels) {
   }
 
   return (
-    <Card title={specificTranslations.title}>
+    <Card title={'Title'}>
       <Card.Section>
         <div style={chartStyles.wrapperStyle.style}>{RenderCharts()}</div>
       </Card.Section>

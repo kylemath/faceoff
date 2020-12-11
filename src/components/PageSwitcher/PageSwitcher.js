@@ -6,7 +6,7 @@ import { mockMuseEEG } from "./utils/mockMuseEEG";
 import * as generalTranslations from "./components/translations/en";
 import { emptyAuxChannelData } from "./components/chartOptions";
 
-import * as funSpectro from "./components/EEGEduSpectro/EEGEduSpectro";
+import * as funSpectro from "./components/EEGEduSpectro";
 
 import Canvas from './Canvas'
 
