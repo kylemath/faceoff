@@ -29,16 +29,6 @@ let all_model_info = {
     }
 };
 
-function computing_prep_canvas(size) {
-    // We don't `return tf.image.resizeBilinear(v1, [size * draw_multiplier, size * draw_multiplier]);`
-    // since that makes image blurred, which is not what we want.
-    // So instead, we manually enlarge the image.
-    let canvas = document.getElementById("the_canvas");
-    let ctx = canvas.getContext("2d");
-    ctx.canvas.width = size;
-    ctx.canvas.height = size;
-}
-
 function image_enlarge(y, draw_multiplier) {
     if (draw_multiplier === 1) {
         return y;
@@ -51,22 +41,23 @@ function image_enlarge(y, draw_multiplier) {
 }
 
 async function computing_generate_main(model, size, draw_multiplier, latent_dim, psd) {
-    const y = tf.tidy(() => {
-        console.log(psd)
-        // psd is 128 long but typeof(psd) return object
-        // this following says that psd are not numbers
-        // const z = tf.scalar(psd)
-        const z = tf.randomNormal([1, latent_dim]);
-        console.log(z)
-        const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
-        console.log(y)
-        return image_enlarge(y, draw_multiplier);
-
-    });
-    let c = document.getElementById("the_canvas");
-    console.log('canvas', c);
-    console.log('image generated, image data: ', y);
-    await tf.browser.toPixels(y, c);
+    if (psd) {
+        const y = tf.tidy(() => {
+            // console.log(typeof(psd[0]));
+            // psd is 128 long but typeof(psd) return object
+            // this following says that psd are not numbers
+            const z = tf.scalar(psd.values())
+            // const z = tf.randomNormal([1, latent_dim]);
+            // console.log(z)
+            const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
+            // console.log(y)
+            return image_enlarge(y, draw_multiplier);
+        });
+        let c = document.getElementById("the_canvas");
+        // console.log('canvas', c);
+        // console.log('image generated, image data: ', y);
+        await tf.browser.toPixels(y, c);
+    };
 }
 
 // Delay that many ms before tf computing, which can block UI drawing.
@@ -92,9 +83,7 @@ export class ModelRunner {
     setup_model(model_name) {
         this.model_name = model_name;
         let model_info = all_model_info[model_name];
-        let model_size = model_info.model_size,
-            model_url = model_info.model_url,
-            draw_multiplier = model_info.draw_multiplier,
+        let model_url = model_info.model_url,
             description = model_info.description;
 
 
@@ -119,7 +108,7 @@ export class ModelRunner {
             model_latent_dim = model_info.model_latent_dim,
             draw_multiplier = model_info.draw_multiplier;
 
-        console.log('Generating image...');
+        // console.log('Generating image...');
         this.model_promise.then((model) => {
             return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
         }).then((model) => {

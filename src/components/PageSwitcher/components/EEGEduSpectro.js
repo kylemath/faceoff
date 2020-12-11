@@ -9,8 +9,7 @@ import { zipSamples } from "muse-js";
 import {
   bandpassFilter,
   epoch,
-  fft,
-  sliceFFT
+  fft
 } from "@neurosity/pipes";
 
 import { chartStyles } from "./chartOptions";
@@ -110,7 +109,6 @@ export function renderModule(channels) {
 
       //only left frontal channel
       if (index === 1 && window.freqs) {
-        console.log(window.bins)
         model_runner.generate(window.psd);
 
         return (
