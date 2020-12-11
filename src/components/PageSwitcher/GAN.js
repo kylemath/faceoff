@@ -92,7 +92,7 @@ export class ModelRunner {
             draw_multiplier = model_info.draw_multiplier,
             description = model_info.description;
 
-        computing_prep_canvas(model_size * draw_multiplier);
+        // computing_prep_canvas(model_size * draw_multiplier);
         console.log(`Setting up model ${description}`);
 
         // ui_set_canvas_wrapper_size(model_size * draw_multiplier);
@@ -124,7 +124,7 @@ export class ModelRunner {
             model_latent_dim = model_info.model_latent_dim,
             draw_multiplier = model_info.draw_multiplier;
 
-        computing_prep_canvas(model_size * draw_multiplier);
+        // computing_prep_canvas(model_size * draw_multiplier);
 
         console.log('Generating image...');
 

@@ -17,6 +17,13 @@ import { chartStyles } from "./chartOptions";
 
 import * as generalTranslations from "./translations/en";
 
+import Canvas from '../Canvas'
+
+import * as funGAN from '../GAN'
+
+let model_runner = new funGAN.ModelRunner();
+let model_name = 'dcgan64';
+
 export function getSettings () {
   return {
     cutOffLow: 2,
@@ -60,6 +67,10 @@ export function buildPipe(Settings) {
 }
 
 export function setup(setData, Settings) {
+
+  model_runner.setup_model(model_name)
+  model_runner.generate();
+
   console.log("Subscribing to " + Settings.name);
 
   if (window.multicastSpectro$) {
@@ -86,7 +97,7 @@ export function setup(setData, Settings) {
 }
 
 export function renderModule(channels) {
-  
+
   function RenderCharts() {
     return Object.values(channels.data).map((channel, index) => {
       if (channel.datasets[0].data) {
@@ -99,10 +110,13 @@ export function renderModule(channels) {
 
       //only left frontal channel
       if (index === 1 && window.freqs) {
+        console.log(window.bins)
+        model_runner.generate();
+
         return (
           <React.Fragment key={'dum'}>
             <Card.Section>
-
+              <Canvas />
             </Card.Section>
           </React.Fragment>
         );
