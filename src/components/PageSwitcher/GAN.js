@@ -53,7 +53,8 @@ function image_enlarge(y, draw_multiplier) {
 async function computing_generate_main(model, size, draw_multiplier, latent_dim, psd) {
     const y = tf.tidy(() => {
         console.log(psd)
-
+        // psd is 128 long but typeof(psd) return object
+        // this following says that psd are not numbers
         // const z = tf.scalar(psd)
         const z = tf.randomNormal([1, latent_dim]);
         console.log(z)
