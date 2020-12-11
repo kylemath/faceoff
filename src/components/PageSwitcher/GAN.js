@@ -138,7 +138,7 @@ export class ModelRunner {
             this.start_ms = (new Date()).getTime();
             return computing_generate_main(model, model_size, draw_multiplier, model_latent_dim);
         }).then((_) => {
-            let end_ms = (new Date()).getTime();
+            // let end_ms = (new Date()).getTime();
             // ui_generate_button_enable();
             // ui_animate_button_enable();
             // ui_logging_set_text(`Image generated. It took ${(end_ms - this.start_ms)} ms.`);

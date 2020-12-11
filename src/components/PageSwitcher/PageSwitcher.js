@@ -3,7 +3,6 @@ import { MuseClient } from "muse-js";
 import { Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/polaris";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
-import * as translations from "./translations/en.json";
 import * as generalTranslations from "./components/translations/en";
 import { emptyAuxChannelData } from "./components/chartOptions";
 
@@ -12,8 +11,6 @@ import * as funSpectro from "./components/EEGEduSpectro/EEGEduSpectro";
 import Canvas from './Canvas'
 
 import * as funGAN from './GAN'
-
-const spectro = translations.types.spectro;
 
 const draw = (cnv, ctx, frameCount) => {
 
@@ -29,9 +26,6 @@ let model_name = 'dcgan64';
 
 
 export function PageSwitcher() {
-
-
-//Old stuff
 
   // For auxEnable settings
   const [checked, setChecked] = useState(false);
@@ -53,10 +47,7 @@ export function PageSwitcher() {
   // connection status
   const [status, setStatus] = useState(generalTranslations.connect);
 
-  // for picking a new module
-  const [selected] = useState(spectro);
-
-  async function connect() {
+   async function connect() {
     try {
       if (window.debugWithMock) {
         // Debug with Mock EEG Data
