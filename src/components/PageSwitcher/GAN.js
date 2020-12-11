@@ -40,13 +40,42 @@ function image_enlarge(y, draw_multiplier) {
     ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
 }
 
+function standardDeviation(values){
+  var avg = average(values);
+  
+  var squareDiffs = values.map(function(value){
+    var diff = value - avg;
+    var sqrDiff = diff * diff;
+    return sqrDiff;
+  });
+  
+  var avgSquareDiff = average(squareDiffs);
+
+  var stdDev = Math.sqrt(avgSquareDiff);
+  return stdDev;
+}
+
+function average(data){
+  var sum = data.reduce(function(sum, value){
+    return sum + value;
+  }, 0);
+
+  var avg = sum / data.length;
+  return avg;
+}
+
 async function computing_generate_main(model, size, draw_multiplier, latent_dim, psd) {
     if (psd) {
         const y = tf.tidy(() => {
-            // console.log(typeof(psd[0]));
-            // psd is 128 long but typeof(psd) return object
-            // this following says that psd are not numbers
-            const z = tf.scalar(psd.values())
+            // mean of array
+            var psdMean = average(psd);
+            var psdSD = standardDeviation(psd);
+
+            // divide array by  mean
+            var dum = psd.map(function(item) {return item - psdMean} )
+            var dum2 = dum.map(function(item) {return item / psdSD} )
+     
+            const z = tf.tensor(dum2, [1, 128])
             // const z = tf.randomNormal([1, latent_dim]);
             // console.log(z)
             const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
