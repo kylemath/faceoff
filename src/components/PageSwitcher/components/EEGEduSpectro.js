@@ -29,8 +29,8 @@ export function getSettings () {
     cutOffLow: 2,
     cutOffHigh: 50,
     interval: 16,
-    bins: 128,
-    duration: 128,
+    bins: 256,
+    duration: 256,
     srate: 256,
     name: 'Spectro',
     sliceFFTLow: 1,
@@ -56,7 +56,7 @@ export function buildPipe(Settings) {
       samplingRate: Settings.srate
     }),
     fft({ bins: Settings.bins }),
-    sliceFFT([Settings.sliceFFTLow, Settings.sliceFFTHigh]),
+    // sliceFFT([Settings.sliceFFTLow, Settings.sliceFFTHigh]),
     catchError(err => {
       console.log(err);
     })
@@ -111,7 +111,7 @@ export function renderModule(channels) {
       //only left frontal channel
       if (index === 1 && window.freqs) {
         console.log(window.bins)
-        model_runner.generate();
+        model_runner.generate(window.psd);
 
         return (
           <React.Fragment key={'dum'}>

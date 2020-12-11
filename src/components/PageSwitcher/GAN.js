@@ -50,8 +50,11 @@ function image_enlarge(y, draw_multiplier) {
     ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
 }
 
-async function computing_generate_main(model, size, draw_multiplier, latent_dim) {
+async function computing_generate_main(model, size, draw_multiplier, latent_dim, psd) {
     const y = tf.tidy(() => {
+        console.log(psd)
+
+        // const z = tf.scalar(psd)
         const z = tf.randomNormal([1, latent_dim]);
         console.log(z)
         const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
@@ -65,7 +68,8 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim)
     await tf.browser.toPixels(y, c);
 }
 
-const ui_delay_before_tf_computing_ms = 20;  // Delay that many ms before tf computing, which can block UI drawing.
+// Delay that many ms before tf computing, which can block UI drawing.
+const ui_delay_before_tf_computing_ms = 20; 
 
 function resolve_after_ms(x, ms) {
     return new Promise(resolve => {
@@ -92,56 +96,33 @@ export class ModelRunner {
             draw_multiplier = model_info.draw_multiplier,
             description = model_info.description;
 
-        // computing_prep_canvas(model_size * draw_multiplier);
-        console.log(`Setting up model ${description}`);
 
-        // ui_set_canvas_wrapper_size(model_size * draw_multiplier);
-        // ui_logging_set_text(`Setting up model ${description}...`);
+        console.log(`Setting up model ${description}`);
 
         if (model_name in this.model_promise_cache) {
             this.model_promise = this.model_promise_cache[model_name];
-            // ui_logging_set_text(`Model "${description}" is ready.`);
         } else {
-            // ui_generate_button_disable('Loading...');
-            // ui_animate_button_disable('Loading...');
-            // ui_logging_set_text(`Loading model "${description}"...`);
             this.model_promise = tf.loadLayersModel(model_url);
             this.model_promise.then((model) => {
                 return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
             }).then((model) => {
-                // ui_generate_button_enable();
-                // ui_animate_button_enable();
-                // ui_logging_set_text(`Model "${description}" is ready.`);
                 console.log(`Model "${description} is ready.`);
             });
             this.model_promise_cache[model_name] = this.model_promise;
         }
     }
 
-    generate() {
+    generate(psd) {
         let model_info = all_model_info[this.model_name];
         let model_size = model_info.model_size,
             model_latent_dim = model_info.model_latent_dim,
             draw_multiplier = model_info.draw_multiplier;
 
-        // computing_prep_canvas(model_size * draw_multiplier);
-
         console.log('Generating image...');
-
-        // ui_logging_set_text('Generating image...');
-        // ui_generate_button_disable('Generating...');
-        // ui_animate_button_disable();
-
         this.model_promise.then((model) => {
             return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
         }).then((model) => {
-            this.start_ms = (new Date()).getTime();
-            return computing_generate_main(model, model_size, draw_multiplier, model_latent_dim);
-        }).then((_) => {
-            // let end_ms = (new Date()).getTime();
-            // ui_generate_button_enable();
-            // ui_animate_button_enable();
-            // ui_logging_set_text(`Image generated. It took ${(end_ms - this.start_ms)} ms.`);
+            return computing_generate_main(model, model_size, draw_multiplier, model_latent_dim, psd);
         });
     }
 }
