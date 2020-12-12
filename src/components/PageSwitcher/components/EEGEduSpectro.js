@@ -127,18 +127,20 @@ export function renderModule(channels) {
       <Card >
         <Card.Section>
           <div style={chartStyles.wrapperStyle.style}>{RenderCharts()}</div>
+          <ButtonGroup>
+            <Button
+              primary = {window.psd}
+              disabled={!window.psd}
+              onClick={() => {
+                model_runner.reseed(model_name)
+              }}
+            >
+              {'Click to regenerate'}
+            </Button>
+          </ButtonGroup>
         </Card.Section>
       </Card>
-      <ButtonGroup>
-        <Button
-          primary = {true}
-          onClick={() => {
-            model_runner.reseed(model_name)
-          }}
-        >
-          {'Click to regenerate'}
-        </Button>
-      </ButtonGroup>
+
     </React.Fragment>
   );
 }

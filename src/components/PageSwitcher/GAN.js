@@ -40,12 +40,22 @@ function image_enlarge(y, draw_multiplier) {
     ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
 }
 
-let dampingOfChange = 10; //smaller is more change
+let dampingOfChange = 50; //smaller is more change
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
+// Delay that many ms before tf computing, which can block UI drawing.
+const ui_delay_before_tf_computing_ms = 20; 
+
+function resolve_after_ms(x, ms) {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve(x);
+        }, ms);
+    });
+}
 async function computing_generate_main(model, size, draw_multiplier, latent_dim, psd) {
     if (psd) {
         const zNormalized = tf.tidy(() => {
@@ -77,20 +87,29 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
         
         let c = document.getElementById("the_canvas");
         await tf.browser.toPixels(outPixels, c);
+        await tf.nextFrame();
     };
 }
 
-// Delay that many ms before tf computing, which can block UI drawing.
-const ui_delay_before_tf_computing_ms = 10; 
+// async function computing_animate_latent_space(model, draw_multiplier, animate_frame) {
+//     const inputShape = model.inputs[0].shape.slice(1);
+//     const shift = tf.randomNormal(inputShape).expandDims(0);
+//     const freq = tf.randomNormal(inputShape, 0, .1).expandDims(0);
 
-function resolve_after_ms(x, ms) {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve(x);
-        }, ms);
-    });
-}
+//     let c = document.getElementById("the_canvas");
+//     let i = 0;
+//     while (i < animate_frame) {
+//         i++;
+//         const y = tf.tidy(() => {
+//             const z = tf.sin(tf.scalar(i).mul(freq).add(shift));
+//             const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(.5));
+//             return image_enlarge(y, draw_multiplier);
+//         });
 
+//         await tf.toPixels(y, c);
+//         await tf.nextFrame();
+//     }
+// }
 
 export class ModelRunner {
     constructor() {
