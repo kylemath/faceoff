@@ -25,15 +25,13 @@ let model_name = 'dcgan64';
 
 export function getSettings () {
   return {
-    cutOffLow: 2,
-    cutOffHigh: 50,
+    cutOffLow: 15,
+    cutOffHigh: 30,
     interval: 16,
     bins: 256,
     duration: 256,
     srate: 256,
-    name: 'Spectro',
-    sliceFFTLow: 1,
-    sliceFFTHigh: 100,
+    name: 'EEG'
   }
 };
 

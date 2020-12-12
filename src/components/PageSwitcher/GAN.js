@@ -40,6 +40,12 @@ function image_enlarge(y, draw_multiplier) {
     ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
 }
 
+let dampingOfChange = 10; //smaller is more change
+
+function getRandomInt(max) {
+  return Math.floor(Math.random() * Math.floor(max));
+}
+
 async function computing_generate_main(model, size, draw_multiplier, latent_dim, psd) {
     if (psd) {
         const zNormalized = tf.tidy(() => {
@@ -55,11 +61,18 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
 
             //subtract mean and divide by SD to normalize
             var zMeanSubtract = z.sub(psdMean);
-            var zNormalized = zMeanSubtract.div(psdSD);
+            var zNormalized = zMeanSubtract.div(psdSD).div(dampingOfChange);
             return zNormalized;
         });
 
-        window.thisFace = window.thisFace.add(zNormalized.div(1000))
+        // to avoid moving off into the edge of hyperspace, sometimes add, sometimes subtract
+        const thisDirection = getRandomInt(2); 
+        if (thisDirection === 0) {
+            window.thisFace = window.thisFace.add(zNormalized);
+        } else {
+            window.thisFace = window.thisFace.sub(zNormalized);
+        }
+
         const y = model.predict(window.thisFace).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
         const outPixels = image_enlarge(y, draw_multiplier);
         
