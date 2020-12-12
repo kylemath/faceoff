@@ -66,8 +66,7 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
         });
 
         // to avoid moving off into the edge of hyperspace, sometimes add, sometimes subtract
-        const thisDirection = getRandomInt(2); 
-        if (thisDirection === 0) {
+        if (getRandomInt(2) === 0) {
             window.thisFace = window.thisFace.add(zNormalized);
         } else {
             window.thisFace = window.thisFace.sub(zNormalized);
@@ -124,6 +123,15 @@ export class ModelRunner {
             });
             this.model_promise_cache[model_name] = this.model_promise;
         }
+    }
+
+    reseed(model_name) {
+        this.model_name = model_name;
+        let model_info = all_model_info[model_name];
+        let model_latent_dim = model_info.model_latent_dim;
+
+        console.log(`Reseeding model `);
+        window.thisFace = tf.randomNormal([1, model_latent_dim]);
     }
 
     generate(psd) {

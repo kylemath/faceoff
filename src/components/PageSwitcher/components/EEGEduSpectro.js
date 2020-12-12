@@ -1,7 +1,7 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, RangeSlider} from "@shopify/polaris";
+import { Card, RangeSlider, Button, ButtonGroup} from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -25,11 +25,11 @@ let model_name = 'dcgan64';
 
 export function getSettings () {
   return {
-    cutOffLow: 15,
+    cutOffLow: 1,
     cutOffHigh: 30,
-    interval: 16,
+    interval: 36,
     bins: 256,
-    duration: 256,
+    duration: 1024,
     srate: 256,
     name: 'EEG'
   }
@@ -123,11 +123,23 @@ export function renderModule(channels) {
   }
 
   return (
-    <Card >
-      <Card.Section>
-        <div style={chartStyles.wrapperStyle.style}>{RenderCharts()}</div>
-      </Card.Section>
-    </Card>
+    <React.Fragment>
+      <Card >
+        <Card.Section>
+          <div style={chartStyles.wrapperStyle.style}>{RenderCharts()}</div>
+        </Card.Section>
+      </Card>
+      <ButtonGroup>
+        <Button
+          primary = {true}
+          onClick={() => {
+            model_runner.reseed(model_name)
+          }}
+        >
+          {'Click to regenerate'}
+        </Button>
+      </ButtonGroup>
+    </React.Fragment>
   );
 }
 
