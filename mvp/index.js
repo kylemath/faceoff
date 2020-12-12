@@ -26,7 +26,7 @@ let all_model_info = {
         model_size: 256,
         model_latent_dim: 128,
         draw_multiplier: 1,
-        animate_frame: 10
+        animate_frame: 200
     }
 };
 
