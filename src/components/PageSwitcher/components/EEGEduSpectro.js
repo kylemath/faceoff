@@ -125,7 +125,7 @@ export function renderModule(channels) {
   }
 
   return (
-    <Card title={'Title'}>
+    <Card >
       <Card.Section>
         <div style={chartStyles.wrapperStyle.style}>{RenderCharts()}</div>
       </Card.Section>
@@ -160,16 +160,6 @@ export function renderSliders(setData, setSettings, status, Settings) {
     resetPipeSetup();
   }
 
-  function handleSliceFFTHighRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, sliceFFTHigh: value}));
-    resetPipeSetup();
-  }
-
-  function handleSliceFFTLowRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, sliceFFTLow: value}));
-    resetPipeSetup();
-  }
-
   return (
     <Card title={Settings.name + ' Settings'} sectioned>
       <RangeSlider 
@@ -199,20 +189,6 @@ export function renderSliders(setData, setSettings, status, Settings) {
         label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
         value={Settings.cutOffHigh} 
         onChange={handleCutoffHighRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={1} max={Settings.sliceFFTHigh - 1}
-        label={'Slice FFT Lower limit: ' + Settings.sliceFFTLow + ' Hz'} 
-        value={Settings.sliceFFTLow} 
-        onChange={handleSliceFFTLowRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={Settings.sliceFFTLow + 1}
-        label={'Slice FFT Upper limit: ' + Settings.sliceFFTHigh + ' Hz'} 
-        value={Settings.sliceFFTHigh} 
-        onChange={handleSliceFFTHighRangeSliderChange} 
       />
     </Card>
   )

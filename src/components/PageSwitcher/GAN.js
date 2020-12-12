@@ -40,57 +40,36 @@ function image_enlarge(y, draw_multiplier) {
     ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
 }
 
-function standardDeviation(values){
-  var avg = average(values);
-  
-  var squareDiffs = values.map(function(value){
-    var diff = value - avg;
-    var sqrDiff = diff * diff;
-    return sqrDiff;
-  });
-  
-  var avgSquareDiff = average(squareDiffs);
-
-  var stdDev = Math.sqrt(avgSquareDiff);
-  return stdDev;
-}
-
-function average(data){
-  var sum = data.reduce(function(sum, value){
-    return sum + value;
-  }, 0);
-
-  var avg = sum / data.length;
-  return avg;
-}
-
 async function computing_generate_main(model, size, draw_multiplier, latent_dim, psd) {
     if (psd) {
-        const y = tf.tidy(() => {
-            // mean of array
-            var psdMean = average(psd);
-            var psdSD = standardDeviation(psd);
+        const zNormalized = tf.tidy(() => {
+            //convert psd to tensor
+            const z = tf.tensor(psd, [1, latent_dim])
 
-            // divide array by  mean
-            var dum = psd.map(function(item) {return item - psdMean} )
-            var dum2 = dum.map(function(item) {return item / psdSD} )
-     
-            const z = tf.tensor(dum2, [1, 128])
-            // const z = tf.randomNormal([1, latent_dim]);
-            // console.log(z)
-            const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
-            // console.log(y)
-            return image_enlarge(y, draw_multiplier);
+            //compute mean and variance
+            const psdMean = z.mean();
+            const diffFromMean = z.sub(psdMean);
+            const squaredDiffFromMean = diffFromMean.square();
+            const variance = squaredDiffFromMean.mean();
+            const psdSD = variance.sqrt();
+
+            //subtract mean and divide by SD to normalize
+            var zMeanSubtract = z.sub(psdMean);
+            var zNormalized = zMeanSubtract.div(psdSD);
+            return zNormalized;
         });
+
+        window.thisFace = window.thisFace.add(zNormalized.div(1000))
+        const y = model.predict(window.thisFace).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
+        const outPixels = image_enlarge(y, draw_multiplier);
+        
         let c = document.getElementById("the_canvas");
-        // console.log('canvas', c);
-        // console.log('image generated, image data: ', y);
-        await tf.browser.toPixels(y, c);
+        await tf.browser.toPixels(outPixels, c);
     };
 }
 
 // Delay that many ms before tf computing, which can block UI drawing.
-const ui_delay_before_tf_computing_ms = 20; 
+const ui_delay_before_tf_computing_ms = 10; 
 
 function resolve_after_ms(x, ms) {
     return new Promise(resolve => {
@@ -113,6 +92,7 @@ export class ModelRunner {
         this.model_name = model_name;
         let model_info = all_model_info[model_name];
         let model_url = model_info.model_url,
+            model_latent_dim = model_info.model_latent_dim,
             description = model_info.description;
 
 
@@ -122,6 +102,8 @@ export class ModelRunner {
             this.model_promise = this.model_promise_cache[model_name];
         } else {
             this.model_promise = tf.loadLayersModel(model_url);
+            window.thisFace = tf.randomNormal([1, model_latent_dim]);
+
             this.model_promise.then((model) => {
                 return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
             }).then((model) => {
