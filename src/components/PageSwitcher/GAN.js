@@ -60,6 +60,7 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
     if (psd) {
         const zNormalized = tf.tidy(() => {
             //convert psd to tensor
+            console.log('Converting psd to tensor')
             const z = tf.tensor(psd, [1, latent_dim])
 
             //compute mean and variance
@@ -82,34 +83,13 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
             window.thisFace = window.thisFace.sub(zNormalized);
         }
 
+        console.log('Projecting latent vector')
         const y = model.predict(window.thisFace).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
         const outPixels = image_enlarge(y, draw_multiplier);
-        
         let c = document.getElementById("the_canvas");
         await tf.browser.toPixels(outPixels, c);
-        await tf.nextFrame();
     };
 }
-
-// async function computing_animate_latent_space(model, draw_multiplier, animate_frame) {
-//     const inputShape = model.inputs[0].shape.slice(1);
-//     const shift = tf.randomNormal(inputShape).expandDims(0);
-//     const freq = tf.randomNormal(inputShape, 0, .1).expandDims(0);
-
-//     let c = document.getElementById("the_canvas");
-//     let i = 0;
-//     while (i < animate_frame) {
-//         i++;
-//         const y = tf.tidy(() => {
-//             const z = tf.sin(tf.scalar(i).mul(freq).add(shift));
-//             const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(.5));
-//             return image_enlarge(y, draw_multiplier);
-//         });
-
-//         await tf.toPixels(y, c);
-//         await tf.nextFrame();
-//     }
-// }
 
 export class ModelRunner {
     constructor() {

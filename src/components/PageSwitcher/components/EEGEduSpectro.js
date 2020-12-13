@@ -27,7 +27,7 @@ export function getSettings () {
   return {
     cutOffLow: .01,
     cutOffHigh: 128,
-    interval: 10,
+    interval: 100,
     bins: 256,
     duration: 1024,
     srate: 256,
@@ -107,8 +107,8 @@ export function renderModule(channels) {
 
       //only left frontal channel
       if (index === 1 && window.freqs) {
-        model_runner.generate(window.psd);
-
+        console.log('New PSD Sent in')
+        model_runner.generate(window.psd)
         return (
           <React.Fragment key={'dum'}>
             <Card.Section>
