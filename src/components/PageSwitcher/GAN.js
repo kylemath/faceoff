@@ -40,7 +40,7 @@ function image_enlarge(y, draw_multiplier) {
     ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
 }
 
-let dampingOfChange = 50; //smaller is more change
+let dampingOfChange = 10; //smaller is more change
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));

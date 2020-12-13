@@ -25,9 +25,9 @@ let model_name = 'dcgan64';
 
 export function getSettings () {
   return {
-    cutOffLow: 1,
-    cutOffHigh: 30,
-    interval: 36,
+    cutOffLow: .01,
+    cutOffHigh: 128,
+    interval: 10,
     bins: 256,
     duration: 1024,
     srate: 256,
