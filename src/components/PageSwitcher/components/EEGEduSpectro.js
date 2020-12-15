@@ -20,6 +20,7 @@ import * as funGAN from '../GAN'
 
 let model_runner = new funGAN.ModelRunner();
 let model_name = 'resnet128';
+let delay = 100;
 
 export function getSettings () {
   return {
@@ -91,7 +92,6 @@ export function setup(setData, Settings) {
   }
 }
 
-const delay = 1000;
 
 export function renderModule(channels) {
 
