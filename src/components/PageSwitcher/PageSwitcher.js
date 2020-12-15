@@ -8,6 +8,7 @@ import { emptyAuxChannelData } from "./components/chartOptions";
 
 import * as funSpectro from "./components/EEGEduSpectro";
 
+window.firstAnimate = true;
 
 export function PageSwitcher() {
 

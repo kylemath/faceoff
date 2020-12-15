@@ -12,8 +12,6 @@ import {
   fft
 } from "@neurosity/pipes";
 
-import { chartStyles } from "./chartOptions";
-
 import * as generalTranslations from "./translations/en";
 
 import Canvas from '../Canvas'
@@ -21,7 +19,7 @@ import Canvas from '../Canvas'
 import * as funGAN from '../GAN'
 
 let model_runner = new funGAN.ModelRunner();
-let model_name = 'dcgan64';
+let model_name = 'resnet128';
 
 export function getSettings () {
   return {
@@ -93,32 +91,37 @@ export function setup(setData, Settings) {
   }
 }
 
+const delay = 1000;
+
 export function renderModule(channels) {
 
-  function RenderCharts() {
-    return Object.values(channels.data).map((channel, index) => {
+  function RenderImage() {
+    Object.values(channels.data).map((channel, index) => {
       if (channel.datasets[0].data) {
-        window.psd = channel.datasets[0].data;
-        window.freqs = channel.xLabels;
-        if (channel.xLabels) {
-          window.bins = channel.xLabels.length;
+        if (index === 1) {
+          window.psd = channel.datasets[0].data;
+          window.freqs = channel.xLabels;
+          if (channel.xLabels) {
+            window.bins = channel.xLabels.length;
+          } 
+          if (window.freqs) {
+            //only left frontal channel
+            if (window.firstAnimate) {
+              console.log('FirstAnimate');
+              window.startTime = (new Date()).getTime();
+              window.firstAnimate = false; 
+            }
+            let now = (new Date()).getTime();
+            console.log(now-window.startTime)
+            if (now - window.startTime > delay) {
+              console.log('New PSD Sent in')
+              model_runner.generate(window.psd)
+              window.startTime =  (new Date()).getTime();
+            }
+          }
         }
-      }   
-
-      //only left frontal channel
-      if (index === 1 && window.freqs) {
-        console.log('New PSD Sent in')
-        model_runner.generate(window.psd)
-        return (
-          <React.Fragment key={'dum'}>
-            <Card.Section>
-              <Canvas />
-            </Card.Section>
-          </React.Fragment>
-        );
-      } else {
-        return null
-      }
+      } 
+    return null
     });
   }
 
@@ -126,7 +129,8 @@ export function renderModule(channels) {
     <React.Fragment>
       <Card >
         <Card.Section>
-          <div style={chartStyles.wrapperStyle.style}>{RenderCharts()}</div>
+         {RenderImage()}
+          <Canvas />       
           <ButtonGroup>
             <Button
               primary = {window.psd}
