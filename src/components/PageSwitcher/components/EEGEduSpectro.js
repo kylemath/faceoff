@@ -18,6 +18,8 @@ import Canvas from '../Canvas'
 
 import * as funGAN from '../GAN'
 
+import Webcam from "react-webcam"
+
 let model_runner = new funGAN.ModelRunner();
 let model_name = 'resnet128';
 let delay = 1000;
@@ -95,6 +97,49 @@ export function setup(setData, Settings) {
 
 export function renderModule(channels) {
 
+  const videoConstraints = {
+    width: { min: 480 },
+    height: { min: 480 },
+    aspectRatio: 1
+  };
+
+  const WebcamCapture = () => {
+    const webcamRef = React.useRef(null);
+    const [imgSrc, setImgSrc] = React.useState(null);
+
+    const capture = React.useCallback(() => {
+        const imageSrc = webcamRef.current.getScreenshot();
+        setImgSrc(imageSrc)
+        console.log('I am right here an I have the image source file')
+        console.log(imageSrc)
+      }, [webcamRef, setImgSrc]
+
+    );
+
+
+
+    return(
+      <React.Fragment>
+        <Webcam
+          audio={false}
+          ref={webcamRef}
+          screenshotFormat="image/jpeg"
+          videoConstraints={videoConstraints}
+          width={480}
+          height={480}
+        />
+        <button onClick={capture}>Capture photo</button> 
+        {imgSrc && (
+          <img 
+            src={imgSrc}
+            alt={'dum'}
+          />
+        )}
+      </React.Fragment>
+    )
+  }
+
+
   function RenderImage() {
     Object.values(channels.data).map((channel, index) => {
       if (channel.datasets[0].data) {
@@ -129,6 +174,7 @@ export function renderModule(channels) {
     <React.Fragment>
       <Card >
         <Card.Section>
+         {WebcamCapture()}
          {RenderImage()}
           <Canvas />       
           <ButtonGroup>
