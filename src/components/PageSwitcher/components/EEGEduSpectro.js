@@ -20,6 +20,8 @@ import * as funGAN from '../GAN'
 
 import Webcam from "react-webcam"
 
+import * as tf from '@tensorflow/tfjs';
+
 let model_runner = new funGAN.ModelRunner();
 let model_name = 'resnet128';
 let delay = 1000;
@@ -111,7 +113,14 @@ export function renderModule(channels) {
         const imageSrc = webcamRef.current.getScreenshot();
         setImgSrc(imageSrc)
         console.log('I am right here an I have the image source file')
-        console.log(imageSrc)
+        var image = new Image();
+        image.src = imageSrc;
+        document.body.appendChild(image);
+        image.onload = function(){
+          console.log('image width ' + image.width); // image is loaded and we have image width 
+          tf.browser.fromPixels(image).print();
+
+        }
       }, [webcamRef, setImgSrc]
 
     );
