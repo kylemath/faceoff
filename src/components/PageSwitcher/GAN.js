@@ -56,6 +56,7 @@ function resolve_after_ms(x, ms) {
         }, ms);
     });
 }
+
 async function computing_generate_main(model, size, draw_multiplier, latent_dim, psd) {
     if (psd) {
         const zNormalized = tf.tidy(() => {
@@ -85,7 +86,7 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
 
         console.log('Projecting latent vector')
         const y = model.predict(window.thisFace).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
-        const outPixels = image_enlarge(y, draw_multiplier);
+        const outPixels = y; //image_enlarge(y, draw_multiplier);
         let c = document.getElementById("the_canvas");
         await tf.browser.toPixels(outPixels, c);
     };

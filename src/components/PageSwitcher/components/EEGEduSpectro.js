@@ -100,8 +100,8 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
 
   const videoConstraints = {
-    width: { min: 480 },
-    height: { min: 480 },
+    width: { min: 128 },
+    height: { min: 128 },
     aspectRatio: 1
   };
 
@@ -115,10 +115,11 @@ export function renderModule(channels) {
         console.log('I am right here an I have the image source file')
         var image = new Image();
         image.src = imageSrc;
-        document.body.appendChild(image);
+        // document.body.appendChild(image);
         image.onload = function(){
           console.log('image width ' + image.width); // image is loaded and we have image width 
-          tf.browser.fromPixels(image).print();
+          var outTensor = tf.browser.fromPixels(image);
+          console.log(outTensor.shape)
 
         }
       }, [webcamRef, setImgSrc]
@@ -134,8 +135,8 @@ export function renderModule(channels) {
           ref={webcamRef}
           screenshotFormat="image/jpeg"
           videoConstraints={videoConstraints}
-          width={480}
-          height={480}
+          width={128}
+          height={128}
         />
         <button onClick={capture}>Capture photo</button> 
         {imgSrc && (
