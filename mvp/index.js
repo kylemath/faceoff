@@ -94,6 +94,25 @@ async function computing_fit_target_latent_space(model, draw_multiplier, animate
     const shift = tf.randomNormal(inputShape).expandDims(0);
     const freq = tf.randomNormal(inputShape, 0, .1).expandDims(0);
 
+    // # Psuedocode (just the algorithm)
+    // ignore extraneous steps like regularization, and image stacking
+
+    // Given an initial_vector vector, a target_image,
+    // a perception based loss_function, and num_steps of optimization
+
+    // for each step
+    //   # generate image from vector
+    //   image = generate_image_from_vector(vector)
+
+    //   # Calculate your loss function that you are trying to minimize
+    //   loss = loss_function(image, target_image)
+
+    //   # Calculate the gradient (that is, how to change vector to minimize the loss)
+    //   grads = gradient(loss, vector)
+
+    //   # Apply these changes to the vector
+    //   optimizer.apply_gradients(zip(grads, vector))
+
     let c = document.getElementById("the_other_canvas");
     let i = 0;
     while (i < animate_frame) {
