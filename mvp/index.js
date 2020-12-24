@@ -95,11 +95,6 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     // Define some variablews to help the algorithm
     const inputShape = model.inputs[0].shape.slice(1);
 
-    // Given an initial_vector vector
-    // TODO(korymath): random vector
-    const z = tf.randomNormal([1, latent_dim]);
-    console.log('initial vector', z);
-
     // And a target image
     // TODO(korymath): this is the image sitting in 'the_other_canvas'
     // Can pull directly from HTMLCanvasElement:
@@ -129,34 +124,50 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     const optimizer = tf.train.adam();
     console.log('optimizer: ', optimizer);
 
+    let min_loss = 10000;
+
+    // Given an initial_vector vector
+    // TODO(korymath): random vector
+    const z = tf.randomNormal([1, latent_dim]);
+    console.log('initial vector', z);
+
     let i = 0;
     // for each step
     while (i < num_steps) {
         // increment the counter
         i++;
         // console.log('Step: ', i)
-        console.log('Start a tape and dont dispose tensors...');
-        const y = tf.tidy(() => {
-            // Calculate your loss function that you are trying to minimize
-            // loss = loss_function(image, target_image)
-            // Generate image from vector
-            // image = generate_image_from_vector(vector)
-            const small_image = model.predict(z).squeeze().transpose([1, 2, 0])
-            // Need to enlage the image to compare appropriately
-            // TODO(korymath): can probably do this comparison at 64x64 by downscaling the target_image
-            let image = image_enlarge(small_image, draw_multiplier);
-            console.log('image: ', image);
+        // Given an initial_vector vector
+        const z = tf.randomNormal([1, latent_dim]);
 
-            // Calculate the gradient (that is, how to change vector to minimize the loss)
-            // grads = gradient(loss, vector)
+        // Generate image from vector
+        // image = generate_image_from_vector(vector)
+        const small_image = model.predict(z).squeeze().transpose([1, 2, 0])
+        // Need to enlage the image to compare appropriately
+        // TODO(korymath): can probably do this comparison at 64x64 by downscaling the target_image
+        let image = image_enlarge(small_image, draw_multiplier);
+        // console.log('image: ', image);
 
-            // Apply these changes to the vector
-            // optimizer.apply_gradients(zip(grads, vector))
+        // Calculate your loss function that you are trying to minimize
+        // loss = loss_function(image, target_image)
 
-            const loss = tf.losses.absoluteDifference(target_image, image);
-            loss.data().then(l => console.log('Loss:', l));
+        const loss = tf.losses.absoluteDifference(target_image, image);
+        loss.data().then(l => {
             console.log('Epoch', i);
+            console.log('Loss', l);
+            if (l < min_loss) {
+                // new best image
+                console.log('New best image');
+                // update the min loss
+                min_loss = l;
+            }
         });
+
+        // Calculate the gradient (that is, how to change vector to minimize the loss)
+        // grads = gradient(loss, vector)
+
+        // Apply these changes to the vector
+        // optimizer.apply_gradients(zip(grads, vector))
     }
 }
 
