@@ -29,16 +29,16 @@ let all_model_info = {
     }
 };
 
-function image_enlarge(y, draw_multiplier) {
-    if (draw_multiplier === 1) {
-        return y;
-    }
-    let size = y.shape[0];
-    return y.expandDims(2).tile([1, 1, draw_multiplier, 1]
-    ).reshape([size, size * draw_multiplier, 3]
-    ).expandDims(1).tile([1, draw_multiplier, 1, 1]
-    ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
-}
+// function image_enlarge(y, draw_multiplier) {
+//     if (draw_multiplier === 1) {
+//         return y;
+//     }
+//     let size = y.shape[0];
+//     return y.expandDims(2).tile([1, 1, draw_multiplier, 1]
+//     ).reshape([size, size * draw_multiplier, 3]
+//     ).expandDims(1).tile([1, draw_multiplier, 1, 1]
+//     ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
+// }
 
 let dampingOfChange = 10; //smaller is more change
 

@@ -97,6 +97,25 @@ export function setup(setData, Settings) {
 }
 
 
+function find_closest_latent_vector(initial_vector, num_optimization_steps, steps_per_image) {
+  var vector = new tf.Variable(initial_vector);
+  var optimizer = tf.train.adam(0.01);
+  var loss_fn = new tf.metrics.meanAbsoluteError() 
+
+}
+
+function projectImage(inputImage) {
+  console.log('Projecting image into GAN latent space')
+  var initial_vector = tf.randomNormal([1, 128])
+  var start_image = model_runner.generate(initial_vector)
+  //Plot image
+
+  const num_optimization_steps = 200;
+  const steps_per_image = 5;
+  var trainImages = find_closest_latent_vector(initial_vector, num_optimization_steps, steps_per_image)
+
+}
+
 export function renderModule(channels) {
 
   const videoConstraints = {
@@ -121,6 +140,10 @@ export function renderModule(channels) {
           var outTensor = tf.browser.fromPixels(image);
           console.log(outTensor.shape)
 
+          //project the image from webcam into gan with this API call
+          var projImage = projectImage(outTensor)
+
+
         }
       }, [webcamRef, setImgSrc]
 
@@ -138,13 +161,13 @@ export function renderModule(channels) {
           width={128}
           height={128}
         />
-        <button onClick={capture}>Capture photo</button> 
         {imgSrc && (
           <img 
             src={imgSrc}
             alt={'dum'}
           />
         )}
+        <button onClick={capture}>Capture photo</button> 
       </React.Fragment>
     )
   }
