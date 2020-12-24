@@ -10,7 +10,7 @@ let all_model_info = {
         model_size: 64,
         model_latent_dim: 128,
         draw_multiplier: 4,
-        animate_frame: 200,
+        animate_frame: 10,
     },
     resnet128: {
         description: 'ResNet, 128x128 (252 MB)',
@@ -89,6 +89,27 @@ async function computing_animate_latent_space(model, draw_multiplier, animate_fr
     }
 }
 
+async function computing_fit_target_latent_space(model, draw_multiplier, animate_frame) {
+    const inputShape = model.inputs[0].shape.slice(1);
+    const shift = tf.randomNormal(inputShape).expandDims(0);
+    const freq = tf.randomNormal(inputShape, 0, .1).expandDims(0);
+
+    let c = document.getElementById("the_other_canvas");
+    let i = 0;
+    while (i < animate_frame) {
+        i++;
+        const y = tf.tidy(() => {
+            const z = tf.sin(tf.scalar(i).mul(freq).add(shift));
+            console.log('latent', z);
+            const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(.5));
+            return image_enlarge(y, draw_multiplier);
+        });
+
+        await tf.browser.toPixels(y, c);
+        await tf.nextFrame();
+    }
+}
+
 async function computing_generate_main(model, size, draw_multiplier, latent_dim, canvas_id) {
     const y = tf.tidy(() => {
         const z = tf.randomNormal([1, latent_dim]);
@@ -128,6 +149,7 @@ class ModelRunner {
             description = model_info.description;
 
         computing_prep_canvas(model_size * draw_multiplier);
+        computing_prep_other_canvas(model_size * draw_multiplier);
         ui_set_canvas_wrapper_size(model_size * draw_multiplier);
         ui_set_other_canvas_wrapper_size(model_size * draw_multiplier);
         ui_logging_set_text(`Setting up model ${description}...`);
@@ -242,6 +264,36 @@ class ModelRunner {
             ui_new_target_image_button_enable();
             ui_fit_target_button_enable();
             ui_logging_set_text(`New target image generated. It took ${(end_ms - this.start_ms)} ms.`);
+        });
+    }
+
+    fit_target() {
+        let model_info = all_model_info[this.model_name];
+        let model_size = model_info.model_size,
+            model_latent_dim = model_info.model_latent_dim,
+            draw_multiplier = model_info.draw_multiplier,
+            animate_frame = model_info.animate_frame;
+
+        computing_prep_other_canvas(model_size * draw_multiplier);
+
+        ui_logging_set_text('Fitting target...');
+        ui_generate_button_disable();
+        ui_animate_button_disable();
+        ui_new_target_image_button_disable();
+        ui_fit_target_button_disable();
+
+        this.model_promise.then((model) => {
+            return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
+        }).then((model) => {
+            this.start_ms = (new Date()).getTime();
+            return computing_fit_target_latent_space(model, draw_multiplier, animate_frame);
+        }).then((_) => {
+            let end_ms = (new Date()).getTime();
+            ui_generate_button_enable();
+            ui_animate_button_enable();
+            ui_new_target_image_button_enable();
+            ui_fit_target_button_enable();
+            ui_logging_set_text(`Target image fit. It took ${(end_ms - this.start_ms)} ms.`);
         });
     }
 }
