@@ -89,43 +89,74 @@ async function computing_animate_latent_space(model, draw_multiplier, animate_fr
     }
 }
 
-async function computing_fit_target_latent_space(model, draw_multiplier, animate_frame) {
+async function computing_fit_target_latent_space(model, draw_multiplier, latent_dim) {
+    console.log('Finding the closest vector in latent space');
+
+    // Define some variablews to help the algorithm
     const inputShape = model.inputs[0].shape.slice(1);
-    const shift = tf.randomNormal(inputShape).expandDims(0);
-    const freq = tf.randomNormal(inputShape, 0, .1).expandDims(0);
 
-    // # Psuedocode (just the algorithm)
-    // ignore extraneous steps like regularization, and image stacking
+    // Given an initial_vector vector
+    // TODO(korymath): random vector
+    const z = tf.randomNormal([1, latent_dim]);
+    console.log('initial vector', z);
 
-    // Given an initial_vector vector, a target_image,
-    // a perception based loss_function, and num_steps of optimization
-
-    // for each step
-    //   # generate image from vector
-    //   image = generate_image_from_vector(vector)
-
-    //   # Calculate your loss function that you are trying to minimize
-    //   loss = loss_function(image, target_image)
-
-    //   # Calculate the gradient (that is, how to change vector to minimize the loss)
-    //   grads = gradient(loss, vector)
-
-    //   # Apply these changes to the vector
-    //   optimizer.apply_gradients(zip(grads, vector))
-
+    // And a target image
+    // TODO(korymath): this is the image sitting in 'the_other_canvas'
+    // Can pull directly from HTMLCanvasElement:
+    // https://js.tensorflow.org/api/2.8.1/#browser.fromPixels
     let c = document.getElementById("the_other_canvas");
-    let i = 0;
-    while (i < animate_frame) {
-        i++;
-        const y = tf.tidy(() => {
-            const z = tf.sin(tf.scalar(i).mul(freq).add(shift));
-            console.log('latent', z);
-            const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(.5));
-            return image_enlarge(y, draw_multiplier);
-        });
+    const target_image = tf.browser.fromPixels(c);
+    console.log('target_image: ', target_image)
 
-        await tf.browser.toPixels(y, c);
-        await tf.nextFrame();
+    // And a perception based loss_function
+    // https://js.tensorflow.org/api/latest/#metrics.meanAbsoluteError
+
+    // Mean absolute error is often used as a metric not a loss function
+    // You can use a loss as a metric, but not a metric as a loss.
+    // Homework: why not?
+    // TOOD(korymath): tf.losses.MeanAbsoluteError(reduction="sum") in python code
+
+    // Loss from here:
+    // https://js.tensorflow.org/api/latest/#losses.absoluteDifference
+    // Reduction from here:
+    // https://js.tensorflow.org/api/latest/#Operations-Reduction
+
+    // Define a number of optimization steps
+    const num_steps = 100
+
+    // And an optimizer
+    // optimizer = tf.optimizers.Adam(learning_rate=0.01)
+    const optimizer = tf.train.adam();
+    console.log('optimizer: ', optimizer);
+
+    let i = 0;
+    // for each step
+    while (i < num_steps) {
+        // increment the counter
+        i++;
+        // console.log('Step: ', i)
+        console.log('Start a tape and dont dispose tensors...');
+        const y = tf.tidy(() => {
+            // Calculate your loss function that you are trying to minimize
+            // loss = loss_function(image, target_image)
+            // Generate image from vector
+            // image = generate_image_from_vector(vector)
+            const small_image = model.predict(z).squeeze().transpose([1, 2, 0])
+            // Need to enlage the image to compare appropriately
+            // TODO(korymath): can probably do this comparison at 64x64 by downscaling the target_image
+            let image = image_enlarge(small_image, draw_multiplier);
+            console.log('image: ', image);
+
+            // Calculate the gradient (that is, how to change vector to minimize the loss)
+            // grads = gradient(loss, vector)
+
+            // Apply these changes to the vector
+            // optimizer.apply_gradients(zip(grads, vector))
+
+            const loss = tf.losses.absoluteDifference(target_image, image);
+            loss.data().then(l => console.log('Loss:', l));
+            console.log('Epoch', i);
+        });
     }
 }
 
@@ -293,6 +324,7 @@ class ModelRunner {
             draw_multiplier = model_info.draw_multiplier,
             animate_frame = model_info.animate_frame;
 
+
         computing_prep_other_canvas(model_size * draw_multiplier);
 
         ui_logging_set_text('Fitting target...');
@@ -305,7 +337,7 @@ class ModelRunner {
             return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
         }).then((model) => {
             this.start_ms = (new Date()).getTime();
-            return computing_fit_target_latent_space(model, draw_multiplier, animate_frame);
+            return computing_fit_target_latent_space(model, draw_multiplier, model_latent_dim);
         }).then((_) => {
             let end_ms = (new Date()).getTime();
             ui_generate_button_enable();
