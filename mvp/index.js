@@ -135,7 +135,9 @@ class ModelRunner {
             }).then((model) => {
                 ui_generate_button_enable();
                 ui_animate_button_enable();
-                console.log('Model loaded... get generating.');
+                ui_new_target_image_button_enable();
+                ui_fit_target_button_enable();
+                console.log('Model loaded... net generating.');
                 ui_logging_set_text(`Model "${description}" is ready.`);
             });
             this.model_promise_cache[model_name] = this.model_promise;
@@ -153,6 +155,8 @@ class ModelRunner {
         ui_logging_set_text('Generating image...');
         ui_generate_button_disable('Generating...');
         ui_animate_button_disable();
+        ui_new_target_image_button_disable();
+        ui_fit_target_button_disable();
 
         this.model_promise.then((model) => {
             return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
@@ -179,6 +183,8 @@ class ModelRunner {
         ui_logging_set_text('Animating latent space...');
         ui_generate_button_disable();
         ui_animate_button_disable('Animating...');
+        ui_new_target_image_button_disable();
+        ui_fit_target_button_disable();
 
         this.model_promise.then((model) => {
             return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
@@ -190,6 +196,33 @@ class ModelRunner {
             ui_generate_button_enable();
             ui_animate_button_enable();
             ui_logging_set_text(`Animating took ${(end_ms - this.start_ms)} ms.`);
+        });
+    }
+
+    new_target() {
+        let model_info = all_model_info[this.model_name];
+        let model_size = model_info.model_size,
+            model_latent_dim = model_info.model_latent_dim,
+            draw_multiplier = model_info.draw_multiplier;
+
+        computing_prep_canvas(model_size * draw_multiplier);
+
+        ui_logging_set_text('Generating new target image...');
+        ui_generate_button_disable();
+        ui_animate_button_disable();
+        ui_new_target_image_button_disable();
+        ui_fit_target_button_disable();
+
+        this.model_promise.then((model) => {
+            return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
+        }).then((model) => {
+            this.start_ms = (new Date()).getTime();
+            return computing_generate_main(model, model_size, draw_multiplier, model_latent_dim);
+        }).then((_) => {
+            let end_ms = (new Date()).getTime();
+            ui_generate_button_enable();
+            ui_animate_button_enable();
+            ui_logging_set_text(`Image generated. It took ${(end_ms - this.start_ms)} ms.`);
         });
     }
 }
@@ -236,6 +269,32 @@ function ui_animate_button_enable() {
     document.getElementById('animate-button').textContent = animate_button_default_text;
 }
 
+const new_target_image_button_default_text = "New Target";
+
+function ui_new_target_image_button_disable(text) {
+    document.getElementById('new-target-image-button').classList.add("disabled");
+    text = (text === undefined) ? generate_button_default_text : text;
+    document.getElementById('new-target-image-button').textContent = text;
+}
+
+function ui_new_target_image_button_enable() {
+    document.getElementById('new-target-image-button').classList.remove("disabled");
+    document.getElementById('new-target-image-button').textContent = new_target_image_button_default_text;
+}
+
+const fit_target_button_default_text = "Fit Target";
+
+function ui_fit_target_button_disable(text) {
+    document.getElementById('fit-target-button').classList.add("disabled");
+    text = (text === undefined) ? generate_button_default_text : text;
+    document.getElementById('fit-target-button').textContent = text;
+}
+
+function ui_fit_target_button_enable() {
+    document.getElementById('fit-target-button').classList.remove("disabled");
+    document.getElementById('fit-target-button').textContent = fit_target_button_default_text;
+}
+
 function ui_logging_set_text(text) {
     text = (text === undefined) ? generate_button_default_text : text;
     document.getElementById('logging').textContent = text;
@@ -246,6 +305,14 @@ function ui_generate_button_event_listener(event) {
 }
 
 function ui_animate_button_event_listener(event) {
+    model_runner.animate();
+}
+
+function ui_new_target_image_button_event_listener(event) {
+    model_runner.generate();
+}
+
+function ui_fit_target_button_event_listener(event) {
     model_runner.animate();
 }
 
@@ -285,11 +352,23 @@ function ui_setup_animate_button() {
     document.getElementById('animate-button').onclick = ui_animate_button_event_listener;
 }
 
+function ui_setup_new_target_image_button() {
+    ui_new_target_image_button_enable();
+    document.getElementById('new-target-image-button').onclick = ui_new_target_image_button_event_listener;
+}
+
+function ui_setup_fit_target_button() {
+    ui_fit_target_button_enable();
+    document.getElementById('fit-target-button').onclick = ui_fit_target_button_event_listener;
+}
+
 function ui_setup() {
     ui_setup_model_select();
 
     ui_setup_generate_button();
     ui_setup_animate_button();
+    ui_setup_new_target_image_button();
+    ui_setup_fit_target_button();
 
     change_model(default_model_name);
 }
