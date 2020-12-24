@@ -47,6 +47,16 @@ function computing_prep_canvas(size) {
     ctx.canvas.height = size;
 }
 
+function computing_prep_other_canvas(size) {
+    // We don't `return tf.image.resizeBilinear(v1, [size * draw_multiplier, size * draw_multiplier]);`
+    // since that makes image blurred, which is not what we want.
+    // So instead, we manually enlarge the image.
+    let canvas = document.getElementById("the_other_canvas");
+    let ctx = canvas.getContext("2d");
+    ctx.canvas.width = size;
+    ctx.canvas.height = size;
+}
+
 function image_enlarge(y, draw_multiplier) {
     if (draw_multiplier === 1) {
         return y;
@@ -79,7 +89,7 @@ async function computing_animate_latent_space(model, draw_multiplier, animate_fr
     }
 }
 
-async function computing_generate_main(model, size, draw_multiplier, latent_dim) {
+async function computing_generate_main(model, size, draw_multiplier, latent_dim, canvas_id) {
     const y = tf.tidy(() => {
         const z = tf.randomNormal([1, latent_dim]);
         console.log('latent', z);
@@ -87,7 +97,7 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim)
         return image_enlarge(y, draw_multiplier);
 
     });
-    let c = document.getElementById("the_canvas");
+    let c = document.getElementById(canvas_id);
     await tf.browser.toPixels(y, c);
 }
 
@@ -119,6 +129,7 @@ class ModelRunner {
 
         computing_prep_canvas(model_size * draw_multiplier);
         ui_set_canvas_wrapper_size(model_size * draw_multiplier);
+        ui_set_other_canvas_wrapper_size(model_size * draw_multiplier);
         ui_logging_set_text(`Setting up model ${description}...`);
 
         if (model_name in this.model_promise_cache) {
@@ -127,6 +138,8 @@ class ModelRunner {
         } else {
             ui_generate_button_disable('Loading...');
             ui_animate_button_disable('Loading...');
+            ui_new_target_image_button_disable('Loading...');
+            ui_fit_target_button_disable('Loading...');
             ui_logging_set_text(`Loading model "${description}"...`);
             console.log('loading a model...');
             this.model_promise = tf.loadLayersModel(model_url);
@@ -162,11 +175,13 @@ class ModelRunner {
             return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
         }).then((model) => {
             this.start_ms = (new Date()).getTime();
-            return computing_generate_main(model, model_size, draw_multiplier, model_latent_dim);
+            return computing_generate_main(model, model_size, draw_multiplier, model_latent_dim, "the_canvas");
         }).then((_) => {
             let end_ms = (new Date()).getTime();
             ui_generate_button_enable();
             ui_animate_button_enable();
+            ui_new_target_image_button_enable();
+            ui_fit_target_button_enable();
             ui_logging_set_text(`Image generated. It took ${(end_ms - this.start_ms)} ms.`);
         });
     }
@@ -195,6 +210,8 @@ class ModelRunner {
             let end_ms = (new Date()).getTime();
             ui_generate_button_enable();
             ui_animate_button_enable();
+            ui_new_target_image_button_enable();
+            ui_fit_target_button_enable();
             ui_logging_set_text(`Animating took ${(end_ms - this.start_ms)} ms.`);
         });
     }
@@ -205,7 +222,7 @@ class ModelRunner {
             model_latent_dim = model_info.model_latent_dim,
             draw_multiplier = model_info.draw_multiplier;
 
-        computing_prep_canvas(model_size * draw_multiplier);
+        computing_prep_other_canvas(model_size * draw_multiplier);
 
         ui_logging_set_text('Generating new target image...');
         ui_generate_button_disable();
@@ -217,12 +234,14 @@ class ModelRunner {
             return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
         }).then((model) => {
             this.start_ms = (new Date()).getTime();
-            return computing_generate_main(model, model_size, draw_multiplier, model_latent_dim);
+            return computing_generate_main(model, model_size, draw_multiplier, model_latent_dim, "the_other_canvas");
         }).then((_) => {
             let end_ms = (new Date()).getTime();
             ui_generate_button_enable();
             ui_animate_button_enable();
-            ui_logging_set_text(`Image generated. It took ${(end_ms - this.start_ms)} ms.`);
+            ui_new_target_image_button_enable();
+            ui_fit_target_button_enable();
+            ui_logging_set_text(`New target image generated. It took ${(end_ms - this.start_ms)} ms.`);
         });
     }
 }
@@ -239,8 +258,13 @@ function change_model(model_name) {
 }
 
 function ui_set_canvas_wrapper_size(size) {
-    document.getElementById('canvas-wrapper').style.height = size.toString() + "px";
-    document.getElementById('canvas-wrapper').style.width = size.toString() + "px";
+    document.getElementById('the-canvas-wrapper').style.height = size.toString() + "px";
+    document.getElementById('the-canvas-wrapper').style.width = size.toString() + "px";
+}
+
+function ui_set_other_canvas_wrapper_size(size) {
+    document.getElementById('the-other-canvas-wrapper').style.height = size.toString() + "px";
+    document.getElementById('the-other-canvas-wrapper').style.width = size.toString() + "px";
 }
 
 const generate_button_default_text = "Generate";
@@ -273,7 +297,7 @@ const new_target_image_button_default_text = "New Target";
 
 function ui_new_target_image_button_disable(text) {
     document.getElementById('new-target-image-button').classList.add("disabled");
-    text = (text === undefined) ? generate_button_default_text : text;
+    text = (text === undefined) ? new_target_image_button_default_text : text;
     document.getElementById('new-target-image-button').textContent = text;
 }
 
@@ -286,7 +310,7 @@ const fit_target_button_default_text = "Fit Target";
 
 function ui_fit_target_button_disable(text) {
     document.getElementById('fit-target-button').classList.add("disabled");
-    text = (text === undefined) ? generate_button_default_text : text;
+    text = (text === undefined) ? fit_target_button_default_text : text;
     document.getElementById('fit-target-button').textContent = text;
 }
 
@@ -309,11 +333,11 @@ function ui_animate_button_event_listener(event) {
 }
 
 function ui_new_target_image_button_event_listener(event) {
-    model_runner.generate();
+    model_runner.new_target();
 }
 
 function ui_fit_target_button_event_listener(event) {
-    model_runner.animate();
+    model_runner.fit_target();
 }
 
 function ui_change_model_event_listener(event) {
