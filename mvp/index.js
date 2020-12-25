@@ -126,7 +126,12 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
     let min_loss = 10000;
 
-    vector = tf.Variable(target_image);
+    // Given an initial_vector vector
+    // TODO(korymath): random vector
+    const initial_vector = tf.randomNormal([1, latent_dim]);
+    console.log('initial vector: ', initial_vector);
+
+    const vector = tf.Variable(initial_vector);
 
     let i = 0;
     // for each step
@@ -149,27 +154,26 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
             // Calculate your loss function that you are trying to minimize
             // loss = loss_function(image, target_image)
 
-            const loss = tf.losses.absoluteDifference(target_image, image);
-            loss.data().then(l => {
-                console.log('Epoch', i);
-                console.log('Loss', l);
-                if (l < min_loss) {
-                    // new best image
-                    console.log('New best image');
-                    // update the min loss
-                    min_loss = l;
-                }
-            });
+            // const loss = tf.losses.absoluteDifference(target_image, image);
+            // loss.data().then(l => {
+            //     console.log('Epoch', i);
+            //     console.log('Loss', l);
+            //     if (l < min_loss) {
+            //         // new best image
+            //         console.log('New best image');
+            //         // update the min loss
+            //         min_loss = l;
+            //     }
+            // });
 
             return tf.losses.absoluteDifference(target_image, image);
         });
 
 
         // Calculate the gradient (that is, how to change vector to minimize the loss)
-        console.log('Computing gradient wrt loss function')
+        console.log('Applying gradient to lossFunction')
         const grads = tf.variableGrads(lossFunction)
 
-        console.log('Applying the gradients to modify image)')
         // Apply these changes to the vector
         optimizer.apply_gradients(zip(grads, [vector]))
     }
