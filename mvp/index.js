@@ -147,9 +147,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
             // Generate image from vector
             // image = generate_image_from_vector(vector)
-            vector.data().then(l => {
-                const small_image = model.predict(l).squeeze().transpose([1, 2, 0])
-            });
+            const small_image = model.predict(vector).squeeze().transpose([1, 2, 0])
 
             // Need to enlage the image to compare appropriately
             // TODO(korymath): can probably do this comparison at 64x64 by downscaling the target_image
@@ -178,7 +176,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
         // Calculate the gradient (that is, how to change vector to minimize the loss)
         console.log('Applying gradient to lossFunction')
-        const grads = tf.variableGrads(lossFunction, [vector])
+        const grads = tf.variableGrads(lossFunction)
 
         // Apply these changes to the vector
         optimizer.applyGradients(zip(grads, [vector]))
