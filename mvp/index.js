@@ -89,6 +89,10 @@ async function computing_animate_latent_space(model, draw_multiplier, animate_fr
     }
 }
 
+//make zip function with map
+// https://stackoverflow.com/questions/22015684/how-do-i-zip-two-arrays-in-javascript
+const zip = (a, b) => a.map((k, i) => [k, b[i]]);
+
 async function computing_fit_target_latent_space(model, draw_multiplier, latent_dim) {
     console.log('Finding the closest vector in latent space');
 
@@ -172,10 +176,10 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
         // Calculate the gradient (that is, how to change vector to minimize the loss)
         console.log('Applying gradient to lossFunction')
-        const grads = tf.variableGrads(lossFunction)
+        const grads = tf.variableGrads(lossFunction, [vector])
 
         // Apply these changes to the vector
-        optimizer.apply_gradients(zip(grads, [vector]))
+        optimizer.applyGradients(zip(grads, [vector]))
     }
 }
 
