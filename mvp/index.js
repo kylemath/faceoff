@@ -89,10 +89,6 @@ async function computing_animate_latent_space(model, draw_multiplier, animate_fr
     }
 }
 
-//make zip function with map
-// https://stackoverflow.com/questions/22015684/how-do-i-zip-two-arrays-in-javascript
-const zip = (a, b) => a.map((k, i) => [k, b[i]]);
-
 async function computing_fit_target_latent_space(model, draw_multiplier, latent_dim) {
     console.log('Finding the closest vector in latent space');
 
@@ -160,56 +156,40 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
     const num_steps = 100;
 
-    // Given an initial_vector vector
-    // TODO(korymath): random vector
-    const initial_vector = tf.randomNormal([1, latent_dim]);
-    console.log('initial vector: ', initial_vector);
+    // Train the model.
+    for (let i = 0; i < num_steps; i++) {
+        console.log('optimization step: ', i);
+        // Option 1: Optimization can happen in a single step
+        // optimizer.minimize(() => loss(f(z), target_tensor));
 
-    const vector = tf.Variable(initial_vector);
-
-    let i = 0;
-    // for each step
-    while (i < num_steps) {
-        // increment the counter
-        i++;
-        // console.log('Step: ', i)
-        const lossFunction = () => tf.tidy(() => {
-
-            // Generate image from vector
-            // image = generate_image_from_vector(vector)
-            const small_image = model.predict(vector).squeeze().transpose([1, 2, 0])
-
-            // Need to enlage the image to compare appropriately
-            // TODO(korymath): can probably do this comparison at 64x64 by downscaling the target_image
-            let image = image_enlarge(small_image, draw_multiplier);
-            // console.log('image: ', image);
-
-
-            // Calculate your loss function that you are trying to minimize
-            // loss = loss_function(image, target_image)
-
-            // const loss = tf.losses.absoluteDifference(target_image, image);
-            // loss.data().then(l => {
-            //     console.log('Epoch', i);
-            //     console.log('Loss', l);
-            //     if (l < min_loss) {
-            //         // new best image
-            //         console.log('New best image');
-            //         // update the min loss
-            //         min_loss = l;
-            //     }
-            // });
-
-            return tf.losses.absoluteDifference(target_image, image);
-        });
-
+        // Option 2: Optimization in two steps if you want to compute the gradients first
+        // and then apply the gradients to the variables in the
+        // function to be optimized
 
         // Calculate the gradient (that is, how to change vector to minimize the loss)
-        console.log('Applying gradient to lossFunction')
-        const grads = tf.variableGrads(lossFunction)
+        const _tmp_fn = function() {
+            // console.log('executing tmp fn');
+            const predicted_image = f();
+            // console.log('predicted_image', predicted_image);
+            // console.log('target_tensor', target_tensor);
+            const computed_loss = loss(predicted_image, target_tensor);
+            computed_loss.data().then(l => {
+                console.log('Loss: ', l);
+            });
+            return computed_loss;
+        }
+        let {value, grads} = optimizer.computeGradients(_tmp_fn, varList=[z]);
+
+        // NOTE
+        // tf.variableGrads is somewhat equivalent to the above, but not sure
+        // what optimizer it defaults to.
+        // let {value, grads} = tf.variableGrads(_tmp_fn);
+
+        // console.log('value', value);
+        // console.log('grads', grads);
 
         // Apply these changes to the vector
-        optimizer.applyGradients(zip(grads, [vector]))
+        optimizer.applyGradients(grads);
     }
 
     // Make predictions.
