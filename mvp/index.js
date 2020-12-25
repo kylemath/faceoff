@@ -92,83 +92,120 @@ async function computing_animate_latent_space(model, draw_multiplier, animate_fr
 async function computing_fit_target_latent_space(model, draw_multiplier, latent_dim) {
     console.log('Finding the closest vector in latent space');
 
-    // Define some variablews to help the algorithm
-    const inputShape = model.inputs[0].shape.slice(1);
-
-    // And a target image
-    // TODO(korymath): this is the image sitting in 'the_other_canvas'
-    // Can pull directly from HTMLCanvasElement:
+    // Define the target_image
+    // This is the image sitting in 'the_other_canvas'
+    // We can pull directly from HTMLCanvasElement:
     // https://js.tensorflow.org/api/2.8.1/#browser.fromPixels
-    let c = document.getElementById("the_other_canvas");
-    const target_image = tf.browser.fromPixels(c);
-    console.log('target_image: ', target_image)
+    let the_canvas = document.getElementById("the_canvas");
+    let the_other_canvas = document.getElementById("the_other_canvas");
 
-    // And a perception based loss_function
+    var ctx = the_other_canvas.getContext("2d");
+    let target_image = ctx.getImageData(0, 0, 256, 256);
+    console.log('target_image', target_image);
+
+    let target_tensor = tf.browser.fromPixels(target_image);
+    // console.log('target_image: ', target_image);
+
+    // Transforms a z-vector as x (input) to an image (output)
+    // Given an initial_vector vector
+    // Choose a random starting point.
+    let z = tf.variable(tf.randomNormal([1, latent_dim]));
+    // console.log('initial vector', z);
+
+    const f = function(x) {
+        // Generate image from vector
+        // console.log('running function')
+        // console.log('x', x);
+        // console.log('z', z);
+        // console.log('model.predict(z)', model.predict(z));
+        // console.log('model.predict(z).squeeze()', model.predict(z).squeeze());
+
+        // console.log('model.predict(z).squeeze()transpose([1, 2, 0])', model.predict(z).squeeze().transpose([1, 2, 0]));
+        const small_image = model.predict(z).squeeze().transpose([1, 2, 0]);
+        // TODO(korymath): Need to enlarge the image to compare appropriately
+        // TODO(korymath): can probably do this comparison at 64x64 by downscaling the target_image
+        return image_enlarge(small_image, draw_multiplier);
+    }
+
+    // Define the loss function
+
+    // Define a perception based loss_function
     // https://js.tensorflow.org/api/latest/#metrics.meanAbsoluteError
-
     // Mean absolute error is often used as a metric not a loss function
     // You can use a loss as a metric, but not a metric as a loss.
     // Homework: why not?
-    // TOOD(korymath): tf.losses.MeanAbsoluteError(reduction="sum") in python code
-
+    // TODO(korymath): tf.losses.MeanAbsoluteError(reduction="sum") in python code
     // Loss from here:
     // https://js.tensorflow.org/api/latest/#losses.absoluteDifference
     // Reduction from here:
     // https://js.tensorflow.org/api/latest/#Operations-Reduction
 
-    // Define a number of optimization steps
-    const num_steps = 100
+    const loss = function(pred, label) {
+        // console.log('pred', pred);
+        // console.log('label', label);
+        // const difference = pred.sub(label);
+        // console.log(' pred.sub(label)',  pred.sub(label))
+        // console.log(' pred.sub(label).square()',  pred.sub(label).square());
+        // console.log(' pred.sub(label).square().mean()',  pred.sub(label).square().mean());
+        return pred.sub(label).square().mean();
+    }
 
-    // And an optimizer
-    // optimizer = tf.optimizers.Adam(learning_rate=0.01)
-    const optimizer = tf.train.adam();
-    console.log('optimizer: ', optimizer);
+    // Define an optimizer
+    const learningRate = 0.01;
+    const optimizer = tf.train.sgd(learningRate);
 
-    let min_loss = 10000;
+    const num_steps = 100;
 
-    // Given an initial_vector vector
-    // TODO(korymath): random vector
-    const z = tf.randomNormal([1, latent_dim]);
-    console.log('initial vector', z);
+    // Train the model.
+    for (let i = 0; i < num_steps; i++) {
+        console.log('optimization step: ', i);
+        // Option 1: Optimization can happen in a single step
+        // optimizer.minimize(() => loss(f(z), target_tensor));
 
-    let i = 0;
-    // for each step
-    while (i < num_steps) {
-        // increment the counter
-        i++;
-        // console.log('Step: ', i)
-        // Given an initial_vector vector
-        const z = tf.randomNormal([1, latent_dim]);
-
-        // Generate image from vector
-        // image = generate_image_from_vector(vector)
-        const small_image = model.predict(z).squeeze().transpose([1, 2, 0])
-        // Need to enlage the image to compare appropriately
-        // TODO(korymath): can probably do this comparison at 64x64 by downscaling the target_image
-        let image = image_enlarge(small_image, draw_multiplier);
-        // console.log('image: ', image);
-
-        // Calculate your loss function that you are trying to minimize
-        // loss = loss_function(image, target_image)
-
-        const loss = tf.losses.absoluteDifference(target_image, image);
-        loss.data().then(l => {
-            console.log('Epoch', i);
-            console.log('Loss', l);
-            if (l < min_loss) {
-                // new best image
-                console.log('New best image');
-                // update the min loss
-                min_loss = l;
-            }
-        });
+        // Option 2: Optimization in two steps if you want to compute the gradients first
+        // and then apply the gradients to the variables in the
+        // function to be optimized
 
         // Calculate the gradient (that is, how to change vector to minimize the loss)
-        // grads = gradient(loss, vector)
+        const _tmp_fn = function() {
+            // console.log('executing tmp fn');
+            const predicted_image = f();
+            // console.log('predicted_image', predicted_image);
+            // console.log('target_tensor', target_tensor);
+            const computed_loss = loss(predicted_image, target_tensor);
+            computed_loss.data().then(l => {
+                console.log('Loss: ', l);
+            });
+            return computed_loss;
+        }
+        let {value, grads} = optimizer.computeGradients(_tmp_fn, varList=[z]);
+
+        // NOTE
+        // tf.variableGrads is somewhat equivalent to the above, but not sure
+        // what optimizer it defaults to.
+        // let {value, grads} = tf.variableGrads(_tmp_fn);
+
+        // console.log('value', value);
+        // console.log('grads', grads);
 
         // Apply these changes to the vector
-        // optimizer.apply_gradients(zip(grads, vector))
+        optimizer.applyGradients(grads);
     }
+
+    // Make predictions.
+    console.log('found optimal latent');
+    // console.log(`z: ${z.dataSync()}`);
+
+    // Generate the new best image
+    const y = tf.tidy(() => {
+        console.log('latent', z);
+        const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(.5));
+        return image_enlarge(y, draw_multiplier);
+    });
+
+    // Print it to the top canvas
+    await tf.browser.toPixels(y, the_canvas);
+    await tf.nextFrame();
 }
 
 async function computing_generate_main(model, size, draw_multiplier, latent_dim, canvas_id) {
@@ -332,11 +369,9 @@ class ModelRunner {
         let model_info = all_model_info[this.model_name];
         let model_size = model_info.model_size,
             model_latent_dim = model_info.model_latent_dim,
-            draw_multiplier = model_info.draw_multiplier,
-            animate_frame = model_info.animate_frame;
+            draw_multiplier = model_info.draw_multiplier;
 
-
-        computing_prep_other_canvas(model_size * draw_multiplier);
+        // computing_prep_other_canvas(model_size * draw_multiplier);
 
         ui_logging_set_text('Fitting target...');
         ui_generate_button_disable();
