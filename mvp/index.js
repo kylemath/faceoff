@@ -137,37 +137,43 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
         // increment the counter
         i++;
         // console.log('Step: ', i)
-        // Given an initial_vector vector
-        const z = tf.randomNormal([1, latent_dim]);
+        const lossFunction = () => tf.tidy(() => {
 
-        // Generate image from vector
-        // image = generate_image_from_vector(vector)
-        const small_image = model.predict(z).squeeze().transpose([1, 2, 0])
-        // Need to enlage the image to compare appropriately
-        // TODO(korymath): can probably do this comparison at 64x64 by downscaling the target_image
-        let image = image_enlarge(small_image, draw_multiplier);
-        // console.log('image: ', image);
+            // Generate image from vector
+            // image = generate_image_from_vector(vector)
+            const small_image = model.predict(z).squeeze().transpose([1, 2, 0])
 
-        // Calculate your loss function that you are trying to minimize
-        // loss = loss_function(image, target_image)
+            // Need to enlage the image to compare appropriately
+            // TODO(korymath): can probably do this comparison at 64x64 by downscaling the target_image
+            let image = image_enlarge(small_image, draw_multiplier);
+            // console.log('image: ', image);
 
-        const loss = tf.losses.absoluteDifference(target_image, image);
-        loss.data().then(l => {
-            console.log('Epoch', i);
-            console.log('Loss', l);
-            if (l < min_loss) {
-                // new best image
-                console.log('New best image');
-                // update the min loss
-                min_loss = l;
-            }
+
+            // Calculate your loss function that you are trying to minimize
+            // loss = loss_function(image, target_image)
+
+            const loss = tf.losses.absoluteDifference(target_image, image);
+            loss.data().then(l => {
+                console.log('Epoch', i);
+                console.log('Loss', l);
+                if (l < min_loss) {
+                    // new best image
+                    console.log('New best image');
+                    // update the min loss
+                    min_loss = l;
+                }
+            });
+
+            return tf.losses.absoluteDifference(target_image, image);
         });
 
+
         // Calculate the gradient (that is, how to change vector to minimize the loss)
-        // grads = gradient(loss, vector)
+        console.log('Applying gradient to lossFunction')
+        const grads = tf.variableGrads(lossFunction, [z])
 
         // Apply these changes to the vector
-        // optimizer.apply_gradients(zip(grads, vector))
+        optimizer.apply_gradients(zip(grads, z))
     }
 }
 
