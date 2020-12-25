@@ -126,10 +126,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
     let min_loss = 10000;
 
-    // Given an initial_vector vector
-    // TODO(korymath): random vector
-    const z = tf.randomNormal([1, latent_dim]);
-    console.log('initial vector', z);
+    vector = tf.Variable(target_image);
 
     let i = 0;
     // for each step
@@ -141,7 +138,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
             // Generate image from vector
             // image = generate_image_from_vector(vector)
-            const small_image = model.predict(z).squeeze().transpose([1, 2, 0])
+            const small_image = model.predict(vector).squeeze().transpose([1, 2, 0])
 
             // Need to enlage the image to compare appropriately
             // TODO(korymath): can probably do this comparison at 64x64 by downscaling the target_image
@@ -169,11 +166,12 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
 
         // Calculate the gradient (that is, how to change vector to minimize the loss)
-        console.log('Applying gradient to lossFunction')
-        const grads = tf.variableGrads(lossFunction, [z])
+        console.log('Computing gradient wrt loss function')
+        const grads = tf.variableGrads(lossFunction)
 
+        console.log('Applying the gradients to modify image)')
         // Apply these changes to the vector
-        optimizer.apply_gradients(zip(grads, z))
+        optimizer.apply_gradients(zip(grads, [vector]))
     }
 }
 
