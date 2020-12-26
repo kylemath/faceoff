@@ -110,8 +110,14 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     }
 
     const loss = function(pred, label) {
-        return pred.sub(label).square().mean();
+        return pred.sub(label).abs().mean();
     }
+
+    const regularizer = function(vector, dim, loss) {
+        const regularize = tf.abs(tf.norm(vector) - tf.sqrt(dim));
+        const new_loss = tf.add(loss, regularize);
+        return new_loss
+    }    
 
     // Define an optimizer
     const learningRate = 0.01;
@@ -128,24 +134,30 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
             computed_loss.data().then(l => {
                 console.log('Loss: ', l[0]);
             });
-            return computed_loss;
+            const regularized_loss = regularizer(z, latent_dim, computed_loss); 
+            return regularized_loss
         }
+
         let {value, grads} = optimizer.computeGradients(_loss_function, varList=[z]);
         optimizer.applyGradients(grads);
+
+
+        if (i % 10 === 0 | i === num_steps) {
+            // Generate the new best image
+            const y = tf.tidy(() => {
+                const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(.5));
+                return image_enlarge(y, draw_multiplier);
+            });
+
+            // Print it to the top canvas
+            await tf.browser.toPixels(y, the_canvas);
+            // await tf.nextFrame();    
+        }
+
+
     }
-    // Make predictions.
-    console.log('found optimal latent');
 
-    // Generate the new best image
-    const y = tf.tidy(() => {
-        console.log('latent', z);
-        const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(.5));
-        return image_enlarge(y, draw_multiplier);
-    });
 
-    // Print it to the top canvas
-    await tf.browser.toPixels(y, the_canvas);
-    await tf.nextFrame();
 }
 
 async function computing_generate_main(model, size, draw_multiplier, latent_dim, canvas_id) {
