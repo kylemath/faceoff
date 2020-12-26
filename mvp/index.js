@@ -114,16 +114,15 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     }
 
     const regularizer = function(vector, dim, loss) {
-        const regularize = tf.abs(tf.norm(vector) - tf.sqrt(dim));
-        const new_loss = tf.add(loss, regularize);
         return new_loss
     }    
 
     // Define an optimizer
     const learningRate = 0.01;
-    const optimizer = tf.train.sgd(learningRate);
+    const optimizer = tf.train.adam(learningRate);
 
-    const num_steps = 100;
+    const num_steps = 200;
+    const steps_per_image = 5;
 
     // Train the model.
     for (let i = 0; i < num_steps; i++) {
@@ -134,15 +133,19 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
             computed_loss.data().then(l => {
                 console.log('Loss: ', l[0]);
             });
-            const regularized_loss = regularizer(z, latent_dim, computed_loss); 
-            return regularized_loss
+            const regularize = tf.abs(tf.sub(tf.norm(z), tf.sqrt(latent_dim)));
+            const new_loss = tf.add(computed_loss, regularize);
+            console.log('New Loss: ')
+            new_loss.print()
+ 
+            return new_loss
         }
 
         let {value, grads} = optimizer.computeGradients(_loss_function, varList=[z]);
         optimizer.applyGradients(grads);
 
 
-        if (i % 10 === 0 | i === num_steps) {
+        if (i % steps_per_image === 0 | i === num_steps) {
             // Generate the new best image
             const y = tf.tidy(() => {
                 const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(.5));
@@ -163,7 +166,8 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 async function computing_generate_main(model, size, draw_multiplier, latent_dim, canvas_id) {
     const y = tf.tidy(() => {
         const z = tf.randomNormal([1, latent_dim]);
-        console.log('latent', z);
+        console.log('latent: ')
+        z.print()
         const y = model.predict(z).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
         return image_enlarge(y, draw_multiplier);
 
