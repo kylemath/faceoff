@@ -8,22 +8,7 @@ import { emptyAuxChannelData } from "./components/chartOptions";
 
 import * as funSpectro from "./components/EEGEduSpectro";
 
-import Canvas from './Canvas'
-
-import * as funGAN from './GAN'
-
-const draw = (cnv, ctx, frameCount) => {
-
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-  ctx.fillStyle = '#000000'
-  ctx.beginPath()
-  ctx.arc(50, 100, 20*Math.sin(frameCount*0.05)**2, 0, 2*Math.PI)
-  ctx.fill()
-}
-
-let model_runner = new funGAN.ModelRunner();
-let model_name = 'dcgan64';
-
+window.firstAnimate = true;
 
 export function PageSwitcher() {
 
@@ -107,8 +92,7 @@ export function PageSwitcher() {
               onClick={() => {
                 window.debugWithMock = true;
                 connect();
-                model_runner.setup_model(model_name)
-                model_runner.generate();
+      
               }}
             >
               {status === generalTranslations.connect ? generalTranslations.connectMock : status}
@@ -130,11 +114,8 @@ export function PageSwitcher() {
           />
         </Stack>
       </Card>
-      <Card sectioned>
-        <Canvas draw={draw} />
-      </Card>
       {funSpectro.renderSliders(setSpectroData, setSpectroSettings, status, spectroSettings)}
-      <funSpectro.renderModule data={spectroData} />
+      <funSpectro.renderModule data={spectroData}/>
     </React.Fragment>
   );
 }

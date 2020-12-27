@@ -1,7 +1,7 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, RangeSlider} from "@shopify/polaris";
+import { Card, RangeSlider, Button, ButtonGroup} from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -9,25 +9,28 @@ import { zipSamples } from "muse-js";
 import {
   bandpassFilter,
   epoch,
-  fft,
-  sliceFFT
+  fft
 } from "@neurosity/pipes";
-
-import { chartStyles } from "./chartOptions";
 
 import * as generalTranslations from "./translations/en";
 
+import Canvas from '../Canvas'
+
+import * as funGAN from '../GAN'
+
+let model_runner = new funGAN.ModelRunner();
+let model_name = 'resnet128';
+let delay = 1000;
+
 export function getSettings () {
   return {
-    cutOffLow: 2,
-    cutOffHigh: 50,
-    interval: 16,
-    bins: 128,
-    duration: 128,
+    cutOffLow: .01,
+    cutOffHigh: 128,
+    interval: 100,
+    bins: 256,
+    duration: 1024,
     srate: 256,
-    name: 'Spectro',
-    sliceFFTLow: 1,
-    sliceFFTHigh: 100,
+    name: 'EEG'
   }
 };
 
@@ -49,7 +52,7 @@ export function buildPipe(Settings) {
       samplingRate: Settings.srate
     }),
     fft({ bins: Settings.bins }),
-    sliceFFT([Settings.sliceFFTLow, Settings.sliceFFTHigh]),
+    // sliceFFT([Settings.sliceFFTLow, Settings.sliceFFTHigh]),
     catchError(err => {
       console.log(err);
     })
@@ -60,6 +63,10 @@ export function buildPipe(Settings) {
 }
 
 export function setup(setData, Settings) {
+
+  model_runner.setup_model(model_name)
+  model_runner.generate();
+
   console.log("Subscribing to " + Settings.name);
 
   if (window.multicastSpectro$) {
@@ -85,39 +92,60 @@ export function setup(setData, Settings) {
   }
 }
 
+
 export function renderModule(channels) {
-  
-  function RenderCharts() {
-    return Object.values(channels.data).map((channel, index) => {
+
+  function RenderImage() {
+    Object.values(channels.data).map((channel, index) => {
       if (channel.datasets[0].data) {
-        window.psd = channel.datasets[0].data;
-        window.freqs = channel.xLabels;
-        if (channel.xLabels) {
-          window.bins = channel.xLabels.length;
+        if (index === 1) {
+          window.psd = channel.datasets[0].data;
+          window.freqs = channel.xLabels;
+          if (channel.xLabels) {
+            window.bins = channel.xLabels.length;
+          } 
+          if (window.freqs) {
+            //only left frontal channel
+            if (window.firstAnimate) {
+              console.log('FirstAnimate');
+              window.startTime = (new Date()).getTime();
+              window.firstAnimate = false; 
+            }
+            let now = (new Date()).getTime();
+            console.log(now-window.startTime)
+            if (now - window.startTime > delay) {
+              console.log('New PSD Sent in')
+              model_runner.generate(window.psd)
+              window.startTime =  (new Date()).getTime();
+            }
+          }
         }
-      }   
-
-      //only left frontal channel
-      if (index === 1 && window.freqs) {
-        return (
-          <React.Fragment key={'dum'}>
-            <Card.Section>
-
-            </Card.Section>
-          </React.Fragment>
-        );
-      } else {
-        return null
-      }
+      } 
+    return null
     });
   }
 
   return (
-    <Card title={'Title'}>
-      <Card.Section>
-        <div style={chartStyles.wrapperStyle.style}>{RenderCharts()}</div>
-      </Card.Section>
-    </Card>
+    <React.Fragment>
+      <Card >
+        <Card.Section>
+         {RenderImage()}
+          <Canvas />       
+          <ButtonGroup>
+            <Button
+              primary = {window.psd}
+              disabled={!window.psd}
+              onClick={() => {
+                model_runner.reseed(model_name)
+              }}
+            >
+              {'Click to regenerate'}
+            </Button>
+          </ButtonGroup>
+        </Card.Section>
+      </Card>
+
+    </React.Fragment>
   );
 }
 
@@ -145,16 +173,6 @@ export function renderSliders(setData, setSettings, status, Settings) {
 
   function handleDurationRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, duration: value}));
-    resetPipeSetup();
-  }
-
-  function handleSliceFFTHighRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, sliceFFTHigh: value}));
-    resetPipeSetup();
-  }
-
-  function handleSliceFFTLowRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, sliceFFTLow: value}));
     resetPipeSetup();
   }
 
@@ -187,20 +205,6 @@ export function renderSliders(setData, setSettings, status, Settings) {
         label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
         value={Settings.cutOffHigh} 
         onChange={handleCutoffHighRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={1} max={Settings.sliceFFTHigh - 1}
-        label={'Slice FFT Lower limit: ' + Settings.sliceFFTLow + ' Hz'} 
-        value={Settings.sliceFFTLow} 
-        onChange={handleSliceFFTLowRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={Settings.sliceFFTLow + 1}
-        label={'Slice FFT Upper limit: ' + Settings.sliceFFTHigh + ' Hz'} 
-        value={Settings.sliceFFTHigh} 
-        onChange={handleSliceFFTHighRangeSliderChange} 
       />
     </Card>
   )
