@@ -29,16 +29,16 @@ let all_model_info = {
     }
 };
 
-// function image_enlarge(y, draw_multiplier) {
-//     if (draw_multiplier === 1) {
-//         return y;
-//     }
-//     let size = y.shape[0];
-//     return y.expandDims(2).tile([1, 1, draw_multiplier, 1]
-//     ).reshape([size, size * draw_multiplier, 3]
-//     ).expandDims(1).tile([1, draw_multiplier, 1, 1]
-//     ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
-// }
+function image_enlarge(y, draw_multiplier) {
+    if (draw_multiplier === 1) {
+        return y;
+    }
+    let size = y.shape[0];
+    return y.expandDims(2).tile([1, 1, draw_multiplier, 1]
+    ).reshape([size, size * draw_multiplier, 3]
+    ).expandDims(1).tile([1, draw_multiplier, 1, 1]
+    ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
+}
 
 let dampingOfChange = 10; //smaller is more change
 
@@ -86,7 +86,7 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
 
         console.log('Projecting latent vector')
         const y = model.predict(window.thisFace).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
-        const outPixels = y; //image_enlarge(y, draw_multiplier);
+        const outPixels = image_enlarge(y, draw_multiplier);
         let c = document.getElementById("the_canvas");
         await tf.browser.toPixels(outPixels, c);
     };
