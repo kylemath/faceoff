@@ -28,7 +28,7 @@
               <a
                 href="https://en.wikipedia.org/wiki/Tom_Morello"
                 class="teal-text text-darken-3"
-                >by Tom "The Hot Sauce Guy" Moreno</a
+                ></a
               >
             </li>
           </ul>
@@ -39,8 +39,8 @@
         <div class="col s12 m12 l7">
           <div class="generation-panel">
             <div
+              id="the-canvas-wrapper"
               class="canvas-wrapper"
-              id="canvas-wrapper"
               width="256"
               height="256"
             >
@@ -48,6 +48,18 @@
                 Your browser does not support the canvas element.
               </canvas>
             </div>
+            <div
+            id="the-other-canvas-wrapper"
+              class="canvas-wrapper"
+              width="256"
+              height="256"
+            >
+            <canvas id="the_other_canvas" width="256" height="256">
+              Your browser does not support the canvas element.
+            </canvas>
+            </div>
+
+
           </div>
         </div>
         <div class="col s12 m12 l5">
@@ -77,6 +89,20 @@
                 <button
                   class="waves-effect waves-light btn col s12 btn-large disabled"
                   id="animate-button"
+                ></button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col s6">
+                <button
+                  class="waves-effect waves-light btn col s12 btn-large disabled"
+                  id="new-target-image-button"
+                ></button>
+              </div>
+              <div class="col s6">
+                <button
+                  class="waves-effect waves-light btn col s12 btn-large disabled"
+                  id="fit-target-button"
                 ></button>
               </div>
             </div>

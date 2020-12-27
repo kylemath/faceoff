@@ -103,28 +103,66 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     let the_other_canvas = document.getElementById("the_other_canvas");
 
     // Get the generated image from other canvas and convert to tensor
-    // target_image is a Uint8ClampedArray
-    // target_image_tensor is a [256, 256, 3] Int32Array, range [0, 255]
     var ctx = the_other_canvas.getContext("2d");
+
+    // target_image is a Uint8ClampedArray
     let target_image = ctx.getImageData(0, 0, 256, 256);
+    console.log('target_image', target_image);
+
+    // target_image_tensor is a [256, 256, 3] Int32Array, range [0, 255]
     let target_image_tensor = tf.browser.fromPixels(target_image);
+    console.log('target_image_tensor', target_image_tensor);
 
-    // Create new random vector in latent space to start from
-    // z is sampled from normal distribution
-    // mean of 0, standard deviation of 1
-    z = tf.variable(tf.randomNormal([1, latent_dim]));
-  
+    target_image_tensor.max().data().then(function(value) {
+        console.log('target_image_tensor_max', value);
+    });
+    target_image_tensor.min().data().then(function(value) {
+        console.log('target_image_tensor_min', value);
+    });
+    target_image_tensor.data().then(function(value) {
+        // console.log('target_image_tensor', value);
+    });
+    // console.log('Target tensor length: ')
+    // tensor_length(target_tensor, latent_dim).print()
+
+    if (true) {
+        // OPTION 1
+
+        // Create new random vector in latent space to start from
+        // z is sampled from normal distribution
+        // mean of 0, standard deviation of 1
+        z = tf.variable(tf.randomNormal([1, latent_dim]));
+        console.log('z', z);
+    } else {
+        // OPTION 2
+
+        // if you pull the latent vector from the global scope
+        // then the fitting is very easy
+        console.log('get target latent vector from global scope');
+        stored_target_latent_vector.data().then(function(value) {
+            // console.log('z', value);
+            console.log('z_max', Math.max.apply(Math, value));
+            console.log('z_min', Math.min.apply(Math, value));
+        });
+        // add a bit of random noise
+        z = tf.variable(stored_target_latent_vector.add(tf.randomNormal([1, latent_dim])));
+        console.log('z', z);
+    }
+
     const generate_and_enlarge_image = function(first_time=true) {
-        // rescale only on first generation by multiplying by 255
-        const scaler = (first_time === true) ? 255 : 1
 
+        if (first_time) {
+            scaler = 255;
+        } else {
+            scaler = 1;
+        }
+        
         // model outputs values between [-1, 1]
         const y_unnormalize = model.predict(z).squeeze().transpose([1, 2, 0]);
         // scale the values to the range [0, 1]
         const y_small = y_unnormalize.div(tf.scalar(2)).add(tf.scalar(0.5)).mul(scaler);
         // Enlarge the image to fit the canvas
         let y = image_enlarge(y_small, draw_multiplier);
-
         return y;
     }
 
@@ -133,19 +171,29 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     }
 
     const _loss_function = function() {
-        // Generate Random image and compute loss
         const predicted_image_tensor = generate_and_enlarge_image();
 
+        predicted_image_tensor.max().data().then(function(value) {
+            // console.log('predicted_image_tensor_max', value);
+        });
+        predicted_image_tensor.min().data().then(function(value) {
+            // console.log('predicted_image_tensor_min', value);
+        });
+        predicted_image_tensor.data().then(function(value) {
+            // console.log('predicted_image_tensor', value);
+        });
+
         var computed_loss = loss(predicted_image_tensor, target_image_tensor);
+        // const computed_loss = loss(stored_target_latent_vector, z);
 
         computed_loss.data().then(l => {
             console.log('Loss: ', l[0]);
         });
 
+        // REGULARIZATION
         // Add regularization to the loss function
         const regularize = tensor_length(z, latent_dim);
         computed_loss = tf.add(computed_loss, regularize);
-
         return computed_loss
     }
 
@@ -157,9 +205,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     const steps_per_image = 5;
 
     // Train the model.
-    for (let i = 0; i < num_steps; i++ ) {
-
-        // Compute and apply gradients
+    for (let i = 0; i < num_steps; i++) {
         let {value, grads} = optimizer.computeGradients(_loss_function, varList=[z]);
         optimizer.applyGradients(grads);
 
