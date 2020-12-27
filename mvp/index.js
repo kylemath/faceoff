@@ -113,30 +113,26 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
         return pred.sub(label).abs().mean();
     }
 
-    const regularizer = function(vector, dim, loss) {
-        return new_loss
-    }    
-
     // Define an optimizer
     const learningRate = 0.01;
     const optimizer = tf.train.adam(learningRate);
 
-    const num_steps = 200;
+    const num_steps = 100;
     const steps_per_image = 5;
 
     // Train the model.
     for (let i = 0; i < num_steps; i++) {
-        console.log('optimization step: ', i);
+        // console.log('optimization step: ', i);
         const _loss_function = function() {
             const predicted_image = generate_and_enlarge_image();
             const computed_loss = loss(predicted_image, target_tensor);
-            computed_loss.data().then(l => {
-                console.log('Loss: ', l[0]);
-            });
+            // computed_loss.data().then(l => {
+            //     console.log('Loss: ', l[0]);
+            // });
             const regularize = tf.abs(tf.sub(tf.norm(z), tf.sqrt(latent_dim)));
+            // console.log('Vector Length')
+            regularize.print()
             const new_loss = tf.add(computed_loss, regularize);
-            console.log('New Loss: ')
-            new_loss.print()
  
             return new_loss
         }
