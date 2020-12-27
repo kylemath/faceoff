@@ -132,6 +132,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
         // z is sampled from normal distribution
         // mean of 0, standard deviation of 1
         z = tf.variable(tf.randomNormal([1, latent_dim]));
+        console.log('z', z);
     } else {
         // OPTION 2
 
@@ -143,15 +144,23 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
             console.log('z_max', Math.max.apply(Math, value));
             console.log('z_min', Math.min.apply(Math, value));
         });
+        // add a bit of random noise
         z = tf.variable(stored_target_latent_vector.add(tf.randomNormal([1, latent_dim])));
         console.log('z', z);
     }
 
-    const generate_and_enlarge_image = function() {
+    const generate_and_enlarge_image = function(first_time=true) {
+
+        if (first_time) {
+            scaler = 255;
+        } else {
+            scaler = 1;
+        }
+        
         // model outputs values between [-1, 1]
         const y_unnormalize = model.predict(z).squeeze().transpose([1, 2, 0]);
         // scale the values to the range [0, 1]
-        const y_small = y_unnormalize.div(tf.scalar(2)).add(tf.scalar(0.5)).mul(255);
+        const y_small = y_unnormalize.div(tf.scalar(2)).add(tf.scalar(0.5)).mul(scaler);
         // Enlarge the image to fit the canvas
         let y = image_enlarge(y_small, draw_multiplier);
         return y;
@@ -202,15 +211,9 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
         // put image on canvas periodically and at end
         if (i % steps_per_image === 0 | i === num_steps) {
+
             // Generate the new best image
-            // model outputs values between [-1, 1]
-            const y_unnormalize = model.predict(z).squeeze().transpose([1, 2, 0]);
-
-            // scale the values to the range [0, 1]
-            const y_small = y_unnormalize.div(tf.scalar(2)).add(tf.scalar(0.5));
-
-            // Enlarge the image to fit the canvas
-            let y = image_enlarge(y_small, draw_multiplier);
+            let y = generate_and_enlarge_image(first_time=false) 
 
             // Print it to the top canvas
             await tf.browser.toPixels(y, the_canvas);
