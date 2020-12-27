@@ -18,6 +18,10 @@ import Canvas from '../Canvas'
 
 import * as funGAN from '../GAN'
 
+import Webcam from "react-webcam"
+
+import * as tf from '@tensorflow/tfjs';
+
 let model_runner = new funGAN.ModelRunner();
 let model_name = 'resnet128';
 let delay = 1000;
@@ -93,7 +97,81 @@ export function setup(setData, Settings) {
 }
 
 
+// function find_closest_latent_vector(initial_vector, num_optimization_steps, steps_per_image) {
+//   var vector = new tf.Variable(initial_vector);
+//   var optimizer = tf.train.adam(0.01);
+//   var loss_fn = new tf.metrics.meanAbsoluteError() 
+
+// }
+
+// function projectImage(inputImage) {
+//   console.log('Projecting image into GAN latent space')
+//   var initial_vector = tf.randomNormal([1, 128])
+//   var start_image = model_runner.generate(initial_vector)
+//   //Plot image
+
+//   const num_optimization_steps = 200;
+//   const steps_per_image = 5;
+//   var trainImages = find_closest_latent_vector(initial_vector, num_optimization_steps, steps_per_image)
+
+// }
+
 export function renderModule(channels) {
+
+  const videoConstraints = {
+    width: { min: 256 },
+    height: { min: 256 },
+    aspectRatio: 1
+  };
+
+  const WebcamCapture = () => {
+    const webcamRef = React.useRef(null);
+    const [imgSrc, setImgSrc] = React.useState(null);
+
+    const capture = React.useCallback(() => {
+        const imageSrc = webcamRef.current.getScreenshot();
+        setImgSrc(imageSrc)
+        console.log('I am right here an I have the image source file')
+        var image = new Image();
+        image.src = imageSrc;
+        // document.body.appendChild(image);
+        image.onload = function(){
+          console.log('image width ' + image.width); // image is loaded and we have image width 
+          var outTensor = tf.browser.fromPixels(image);
+          console.log(outTensor)
+
+          //project the image from webcam into gan with this API call
+          // var projImage = projectImage(outTensor)
+
+
+        }
+      }, [webcamRef, setImgSrc]
+
+    );
+
+
+
+    return(
+      <React.Fragment>
+        <Webcam
+          audio={false}
+          ref={webcamRef}
+          screenshotFormat="image/jpeg"
+          videoConstraints={videoConstraints}
+          width={256}
+          height={256}
+        />
+        {imgSrc && (
+          <img 
+            src={imgSrc}
+            alt={'dum'}
+          />
+        )}
+        <button onClick={capture}>Capture photo</button> 
+      </React.Fragment>
+    )
+  }
+
 
   function RenderImage() {
     Object.values(channels.data).map((channel, index) => {
@@ -112,7 +190,7 @@ export function renderModule(channels) {
               window.firstAnimate = false; 
             }
             let now = (new Date()).getTime();
-            console.log(now-window.startTime)
+            // console.log(now-window.startTime)
             if (now - window.startTime > delay) {
               console.log('New PSD Sent in')
               model_runner.generate(window.psd)
@@ -129,6 +207,7 @@ export function renderModule(channels) {
     <React.Fragment>
       <Card >
         <Card.Section>
+         {WebcamCapture()}
          {RenderImage()}
           <Canvas />       
           <ButtonGroup>
