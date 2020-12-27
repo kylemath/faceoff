@@ -141,6 +141,9 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
             const regularize = tensor_length(z, latent_dim);
             // console.log('Vector Length')
             regularize.print()
+            // If following is .sub than predicted vector length increases 
+            // to edge of distribution and image turns into average brown face
+            // If .add than it decreases towards zero and image becomes white
             const new_loss = tf.sub(computed_loss, regularize);
  
             return new_loss
