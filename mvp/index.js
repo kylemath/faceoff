@@ -89,6 +89,10 @@ async function computing_animate_latent_space(model, draw_multiplier, animate_fr
     }
 }
 
+const tensor_length = function(tensor, dim) {
+    return tf.abs(tf.sub(tf.norm(tensor), tf.sqrt(dim)))
+}
+
 async function computing_fit_target_latent_space(model, draw_multiplier, latent_dim) {
     console.log('Finding the closest vector in latent space');
 
@@ -100,9 +104,14 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     var ctx = the_other_canvas.getContext("2d");
     let target_image = ctx.getImageData(0, 0, 256, 256);
     let target_tensor = tf.browser.fromPixels(target_image);
+    console.log('Target tensor length: ')
+    tensor_length(target_tensor, latent_dim).print()
+
 
     // Create new random vector in latent space to start from
     let z = tf.variable(tf.randomNormal([1, latent_dim]));
+    console.log('First guess length: ')
+    tensor_length(z, latent_dim).print()
 
     const generate_and_enlarge_image = function(x) {
         const small_image = model.predict(z).squeeze().transpose([1, 2, 0]);
@@ -129,10 +138,10 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
             // computed_loss.data().then(l => {
             //     console.log('Loss: ', l[0]);
             // });
-            const regularize = tf.abs(tf.sub(tf.norm(z), tf.sqrt(latent_dim)));
+            const regularize = tensor_length(z, latent_dim);
             // console.log('Vector Length')
             regularize.print()
-            const new_loss = tf.add(computed_loss, regularize);
+            const new_loss = tf.sub(computed_loss, regularize);
  
             return new_loss
         }
@@ -140,7 +149,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
         let {value, grads} = optimizer.computeGradients(_loss_function, varList=[z]);
         optimizer.applyGradients(grads);
 
-
+        // put image on canvas periodically and at end
         if (i % steps_per_image === 0 | i === num_steps) {
             // Generate the new best image
             const y = tf.tidy(() => {
@@ -150,13 +159,8 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
             // Print it to the top canvas
             await tf.browser.toPixels(y, the_canvas);
-            // await tf.nextFrame();    
         }
-
-
     }
-
-
 }
 
 async function computing_generate_main(model, size, draw_multiplier, latent_dim, canvas_id) {
