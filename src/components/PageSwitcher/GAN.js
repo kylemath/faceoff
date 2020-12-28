@@ -84,13 +84,13 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
             window.thisFace = window.thisFace.sub(zNormalized);
         }
 
-        // console.log('Projecting latent vector')
-        // const y = model.predict(window.thisFace).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
-        // const outPixels = image_enlarge(y, draw_multiplier);
+        console.log('Projecting latent vector')
+        const y = model.predict(window.thisFace).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
+        const outPixels = image_enlarge(y, draw_multiplier);
         // let c = document.getElementById("the_canvas");
         // await tf.browser.toPixels(outPixels, c);
-        // let d = document.getElementById("other_canvas");
-        // await tf.browser.toPixels(outPixels, d);        
+        let d = document.getElementById("other_canvas");
+        await tf.browser.toPixels(outPixels, d);        
     };
 }
 
@@ -158,7 +158,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     const learningRate = 0.05;
     const optimizer = tf.train.adam(learningRate);
 
-    const num_steps = 200;
+    const num_steps = 20;
     const steps_per_image = 5;
 
     // Train the model.
@@ -179,6 +179,9 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
             await tf.browser.toPixels(y, the_canvas);
         }
     }
+
+    //save to window to load into morpher
+    window.webFace = z;
 }
 
 export class ModelRunner {
@@ -203,7 +206,7 @@ export class ModelRunner {
             this.model_promise = this.model_promise_cache[model_name];
         } else {
             this.model_promise = tf.loadLayersModel(model_url);
-            // window.thisFace = tf.randomNormal([1, model_latent_dim]);
+            window.thisFace = tf.randomNormal([1, model_latent_dim]);
 
             this.model_promise.then((model) => {
                 return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
@@ -230,8 +233,7 @@ export class ModelRunner {
 
         console.log(`Seeding model from Webcam image `);
         // Replace with something like
-        // window.thisFace = window.webFace;
-        window.thisFace = tf.randomNormal([1, model_latent_dim]);
+        window.thisFace = window.webFace;
     }
 
     project(model_name, input_image) {

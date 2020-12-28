@@ -24,7 +24,7 @@ import Webcam from "react-webcam"
 import * as tf from '@tensorflow/tfjs';
 
 let model_runner = new funGAN.ModelRunner();
-let model_name = 'dcgan64';
+let model_name = 'resnet128';
 let delay = 1000;
 
 export function getSettings () {
@@ -69,8 +69,8 @@ export function buildPipe(Settings) {
 
 export function setup(setData, Settings) {
 
-  // model_runner.setup_model(model_name)
-  // model_runner.generate();
+  model_runner.setup_model(model_name)
+  model_runner.generate();
 
   console.log("Subscribing to " + Settings.name);
 
@@ -130,11 +130,8 @@ export function renderModule(channels) {
           console.log(outTensor)
 
           //project the image from webcam into gan with this API call
-          var projImage = projectImage(outTensor)
-          console.log('Image coming out is:', projImage)
+          projectImage(outTensor)
 
-          //save to window to load into morpher
-          // window.webFace = window.webFace
         }
       }, [webcamRef, setImgSrc]
 
@@ -173,35 +170,35 @@ export function renderModule(channels) {
 
 
 
-  // function RenderMorph() {
-  //   Object.values(channels.data).map((channel, index) => {
-  //     if (channel.datasets[0].data) {
-  //       if (index === 1) {
-  //         window.psd = channel.datasets[0].data;
-  //         window.freqs = channel.xLabels;
-  //         if (channel.xLabels) {
-  //           window.bins = channel.xLabels.length;
-  //         } 
-  //         if (window.freqs) {
-  //           //only left frontal channel
-  //           if (window.firstAnimate) {
-  //             console.log('FirstAnimate');
-  //             window.startTime = (new Date()).getTime();
-  //             window.firstAnimate = false; 
-  //           }
-  //           let now = (new Date()).getTime();
-  //           // console.log(now-window.startTime)
-  //           if (now - window.startTime > delay) {
-  //             // console.log('New PSD Sent in')
-  //             model_runner.generate(window.psd)
-  //             window.startTime =  (new Date()).getTime();
-  //           }
-  //         }
-  //       }
-  //     } 
-  //   return null
-  //   });
-  // }
+  function RenderMorph() {
+    Object.values(channels.data).map((channel, index) => {
+      if (channel.datasets[0].data) {
+        if (index === 1) {
+          window.psd = channel.datasets[0].data;
+          window.freqs = channel.xLabels;
+          if (channel.xLabels) {
+            window.bins = channel.xLabels.length;
+          } 
+          if (window.freqs) {
+            //only left frontal channel
+            if (window.firstAnimate) {
+              console.log('FirstAnimate');
+              window.startTime = (new Date()).getTime();
+              window.firstAnimate = false; 
+            }
+            let now = (new Date()).getTime();
+            // console.log(now-window.startTime)
+            if (now - window.startTime > delay) {
+              // console.log('New PSD Sent in')
+              model_runner.generate(window.psd)
+              window.startTime =  (new Date()).getTime();
+            }
+          }
+        }
+      } 
+    return null
+    });
+  }
 
   return (
     <React.Fragment>
@@ -209,13 +206,14 @@ export function renderModule(channels) {
 
         <Card.Section>
          {WebcamCapture()}
+         {RenderMorph()}
+         <Canvas />       
         </Card.Section>
      
         <Card.Section>
           <TextContainer>
           <p> {[ "3) Then connect to EEG to morph face" ]} </p>
           </TextContainer>          
-          <Canvas />       
           <OtherCanvas />       
 
           <ButtonGroup>
