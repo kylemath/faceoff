@@ -104,7 +104,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
     // Define the two canvas names
     let the_canvas = document.getElementById("the_canvas");
-    let the_other_canvas = document.getElementById("the_other_canvas");
+    // let the_other_canvas = document.getElementById("the_other_canvas");
 
     // Get the generated image from other canvas and convert to tensor
     // target_image is a Uint8ClampedArray
@@ -172,6 +172,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
         // Compute and apply gradients
         let {value, grads} = optimizer.computeGradients(_loss_function, [z]);
+        console.log(value)
         optimizer.applyGradients(grads);
 
         // put image on canvas periodically and at end
@@ -234,8 +235,6 @@ export class ModelRunner {
 
     webseed(model_name) {
         this.model_name = model_name;
-        let model_info = all_model_info[model_name];
-        let model_latent_dim = model_info.model_latent_dim;
 
         console.log(`Seeding model from Webcam image `);
         // Replace with something like
@@ -244,8 +243,7 @@ export class ModelRunner {
 
     project(model_name, input_image) {
         let model_info = all_model_info[this.model_name];
-        let model_size = model_info.model_size,
-            model_latent_dim = model_info.model_latent_dim,
+        let model_latent_dim = model_info.model_latent_dim,
             draw_multiplier = model_info.draw_multiplier;
 
         console.log(`Subfunction of Model project `);
