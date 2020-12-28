@@ -145,7 +145,8 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
     const _loss_function = function() {
         // Generate Random image and compute loss
-        const predicted_image_tensor = generate_and_enlarge_image();
+        const first_time = true;
+        const predicted_image_tensor = generate_and_enlarge_image(first_time);
 
         var computed_loss = loss(predicted_image_tensor, target_image_tensor);
 

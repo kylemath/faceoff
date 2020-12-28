@@ -25,7 +25,7 @@ import * as tf from '@tensorflow/tfjs';
 
 let model_runner = new funGAN.ModelRunner();
 let model_name = 'dcgan64';
-let delay = 1000;
+let delay = 100;
 
 export function getSettings () {
   return {
@@ -128,7 +128,7 @@ export function renderModule(channels) {
           // console.log('image width ' + image.width); // image is loaded and we have image width 
           var outTensor = tf.browser.fromPixels(image);
           console.log(outTensor)
-
+          outTensor = tf.image.resizeBilinear(outTensor, [256, 256])
           //project the image from webcam into gan with this API call
           projectImage(outTensor)
 
@@ -143,14 +143,16 @@ export function renderModule(channels) {
             <TextContainer>
             <p> {[ "1) View webcam, line up face, and take photo" ]} </p>
             </TextContainer>
-          <Webcam
-            audio={false}
-            ref={webcamRef}
-            screenshotFormat="image/jpeg"
-            videoConstraints={videoConstraints}
-            width={256}
-            height={256}
-          />
+          {!imgSrc && (
+            <Webcam
+              audio={false}
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              videoConstraints={videoConstraints}
+              width={256}
+              height={256}
+            />
+          )}
           {imgSrc && (
             <img 
               src={imgSrc}
