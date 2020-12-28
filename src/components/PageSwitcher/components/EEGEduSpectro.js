@@ -24,7 +24,7 @@ import Webcam from "react-webcam"
 import * as tf from '@tensorflow/tfjs';
 
 let model_runner = new funGAN.ModelRunner();
-let model_name = 'resnet128';
+let model_name = 'dcgan64';
 let delay = 1000;
 
 export function getSettings () {

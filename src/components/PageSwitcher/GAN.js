@@ -113,6 +113,12 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     // let target_image = ctx.getImageData(0, 0, 256, 256);
     console.log('inside GAN.js', input_image)
     let target_image_tensor = input_image;
+    target_image_tensor.max().data().then(function(value) {
+        console.log('target_image_tensor_max', value);
+    });
+    target_image_tensor.min().data().then(function(value) {
+        console.log('target_image_tensor_min', value);
+    });
 
     // Create new random vector in latent space to start from
     // z is sampled from normal distribution
@@ -158,7 +164,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     const learningRate = 0.05;
     const optimizer = tf.train.adam(learningRate);
 
-    const num_steps = 20;
+    const num_steps = 200;
     const steps_per_image = 5;
 
     // Train the model.
