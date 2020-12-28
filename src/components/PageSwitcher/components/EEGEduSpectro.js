@@ -1,7 +1,7 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, RangeSlider, Button, ButtonGroup} from "@shopify/polaris";
+import { Card, RangeSlider, Button, ButtonGroup, TextContainer} from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -15,6 +15,7 @@ import {
 import * as generalTranslations from "./translations/en";
 
 import Canvas from '../Canvas'
+import OtherCanvas from '../OtherCanvas'
 
 import * as funGAN from '../GAN'
 
@@ -96,25 +97,16 @@ export function setup(setData, Settings) {
   }
 }
 
+function projectImage(inputImage) {
+  console.log('Projecting image into GAN latent space')
 
-// function find_closest_latent_vector(initial_vector, num_optimization_steps, steps_per_image) {
-//   var vector = new tf.Variable(initial_vector);
-//   var optimizer = tf.train.adam(0.01);
-//   var loss_fn = new tf.metrics.meanAbsoluteError() 
-
-// }
-
-// function projectImage(inputImage) {
-//   console.log('Projecting image into GAN latent space')
-//   var initial_vector = tf.randomNormal([1, 128])
-//   var start_image = model_runner.generate(initial_vector)
-//   //Plot image
-
-//   const num_optimization_steps = 200;
-//   const steps_per_image = 5;
-//   var trainImages = find_closest_latent_vector(initial_vector, num_optimization_steps, steps_per_image)
-
-// }
+ ///
+ ///
+ ///
+ ///
+ ///
+ return null
+}
 
 export function renderModule(channels) {
 
@@ -128,10 +120,11 @@ export function renderModule(channels) {
     const webcamRef = React.useRef(null);
     const [imgSrc, setImgSrc] = React.useState(null);
 
+
     const capture = React.useCallback(() => {
         const imageSrc = webcamRef.current.getScreenshot();
         setImgSrc(imageSrc)
-        console.log('I am right here an I have the image source file')
+        console.log('imageSrc Set')
         var image = new Image();
         image.src = imageSrc;
         // document.body.appendChild(image);
@@ -141,39 +134,47 @@ export function renderModule(channels) {
           console.log(outTensor)
 
           //project the image from webcam into gan with this API call
-          // var projImage = projectImage(outTensor)
-
-
+          var projImage = projectImage(outTensor)
+          console.log(projImage)
         }
       }, [webcamRef, setImgSrc]
 
     );
 
-
-
     return(
       <React.Fragment>
-        <Webcam
-          audio={false}
-          ref={webcamRef}
-          screenshotFormat="image/jpeg"
-          videoConstraints={videoConstraints}
-          width={256}
-          height={256}
-        />
-        {imgSrc && (
-          <img 
-            src={imgSrc}
-            alt={'dum'}
+        <Card.Section>
+            <TextContainer>
+            <p> {[ "1) View webcam, line up face, and take photo" ]} </p>
+            </TextContainer>
+          <Webcam
+            audio={false}
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            videoConstraints={videoConstraints}
+            width={256}
+            height={256}
           />
-        )}
-        <button onClick={capture}>Capture photo</button> 
+          {imgSrc && (
+            <img 
+              src={imgSrc}
+              alt={'dum'}
+            />
+          )}
+          <ButtonGroup>
+          <Button onClick={capture}>Capture photo</Button> 
+          </ButtonGroup>
+
+        </Card.Section>
+
       </React.Fragment>
     )
   }
 
 
-  function RenderImage() {
+
+
+  function RenderMorph() {
     Object.values(channels.data).map((channel, index) => {
       if (channel.datasets[0].data) {
         if (index === 1) {
@@ -206,10 +207,19 @@ export function renderModule(channels) {
   return (
     <React.Fragment>
       <Card >
+
         <Card.Section>
          {WebcamCapture()}
-         {RenderImage()}
+        </Card.Section>
+     
+        <Card.Section>
+         {RenderMorph()}
+          <TextContainer>
+          <p> {[ "3) Then connect to EEG to morph face" ]} </p>
+          </TextContainer>          
           <Canvas />       
+          <OtherCanvas />       
+
           <ButtonGroup>
             <Button
               primary = {window.psd}
@@ -218,10 +228,19 @@ export function renderModule(channels) {
                 model_runner.reseed(model_name)
               }}
             >
-              {'Click to regenerate'}
+              {'Seed from Random Face'}
             </Button>
+            <Button
+              primary = {window.psd}
+              disabled={!window.psd}
+              onClick={() => {
+                model_runner.webseed(model_name)
+              }}
+            >
+              {'Seed from Webcam Image'}
+            </Button>            
           </ButtonGroup>
-        </Card.Section>
+        </Card.Section>        
       </Card>
 
     </React.Fragment>

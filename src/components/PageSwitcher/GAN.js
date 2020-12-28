@@ -89,6 +89,8 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
         const outPixels = image_enlarge(y, draw_multiplier);
         let c = document.getElementById("the_canvas");
         await tf.browser.toPixels(outPixels, c);
+        let d = document.getElementById("other_canvas");
+        await tf.browser.toPixels(outPixels, d);        
     };
 }
 
@@ -131,6 +133,17 @@ export class ModelRunner {
         let model_latent_dim = model_info.model_latent_dim;
 
         console.log(`Reseeding model `);
+        window.thisFace = tf.randomNormal([1, model_latent_dim]);
+    }
+
+    webseed(model_name) {
+        this.model_name = model_name;
+        let model_info = all_model_info[model_name];
+        let model_latent_dim = model_info.model_latent_dim;
+
+        console.log(`Seeding model from Webcam image `);
+        // Replace with something like
+        // window.thisFace = window.webFace;
         window.thisFace = tf.randomNormal([1, model_latent_dim]);
     }
 
