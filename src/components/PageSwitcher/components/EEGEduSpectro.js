@@ -24,7 +24,7 @@ import Webcam from "react-webcam"
 import * as tf from '@tensorflow/tfjs';
 
 let model_runner = new funGAN.ModelRunner();
-let model_name = 'resnet128';
+let model_name = 'dcgan64';
 let delay = 1000;
 
 export function getSettings () {
@@ -69,8 +69,8 @@ export function buildPipe(Settings) {
 
 export function setup(setData, Settings) {
 
-  model_runner.setup_model(model_name)
-  model_runner.generate();
+  // model_runner.setup_model(model_name)
+  // model_runner.generate();
 
   console.log("Subscribing to " + Settings.name);
 
@@ -99,13 +99,9 @@ export function setup(setData, Settings) {
 
 function projectImage(inputImage) {
   console.log('Projecting image into GAN latent space')
-
- ///
- ///
- ///
- ///
- ///
- return null
+  console.log('Image going in is:', inputImage)
+  model_runner.setup_model(model_name)
+  return model_runner.project(model_name, inputImage)
 }
 
 export function renderModule(channels) {
@@ -124,18 +120,21 @@ export function renderModule(channels) {
     const capture = React.useCallback(() => {
         const imageSrc = webcamRef.current.getScreenshot();
         setImgSrc(imageSrc)
-        console.log('imageSrc Set')
+        // console.log('imageSrc Set')
         var image = new Image();
         image.src = imageSrc;
         // document.body.appendChild(image);
         image.onload = function(){
-          console.log('image width ' + image.width); // image is loaded and we have image width 
+          // console.log('image width ' + image.width); // image is loaded and we have image width 
           var outTensor = tf.browser.fromPixels(image);
           console.log(outTensor)
 
           //project the image from webcam into gan with this API call
           var projImage = projectImage(outTensor)
-          console.log(projImage)
+          console.log('Image coming out is:', projImage)
+
+          //save to window to load into morpher
+          // window.webFace = window.webFace
         }
       }, [webcamRef, setImgSrc]
 
@@ -174,35 +173,35 @@ export function renderModule(channels) {
 
 
 
-  function RenderMorph() {
-    Object.values(channels.data).map((channel, index) => {
-      if (channel.datasets[0].data) {
-        if (index === 1) {
-          window.psd = channel.datasets[0].data;
-          window.freqs = channel.xLabels;
-          if (channel.xLabels) {
-            window.bins = channel.xLabels.length;
-          } 
-          if (window.freqs) {
-            //only left frontal channel
-            if (window.firstAnimate) {
-              console.log('FirstAnimate');
-              window.startTime = (new Date()).getTime();
-              window.firstAnimate = false; 
-            }
-            let now = (new Date()).getTime();
-            // console.log(now-window.startTime)
-            if (now - window.startTime > delay) {
-              console.log('New PSD Sent in')
-              model_runner.generate(window.psd)
-              window.startTime =  (new Date()).getTime();
-            }
-          }
-        }
-      } 
-    return null
-    });
-  }
+  // function RenderMorph() {
+  //   Object.values(channels.data).map((channel, index) => {
+  //     if (channel.datasets[0].data) {
+  //       if (index === 1) {
+  //         window.psd = channel.datasets[0].data;
+  //         window.freqs = channel.xLabels;
+  //         if (channel.xLabels) {
+  //           window.bins = channel.xLabels.length;
+  //         } 
+  //         if (window.freqs) {
+  //           //only left frontal channel
+  //           if (window.firstAnimate) {
+  //             console.log('FirstAnimate');
+  //             window.startTime = (new Date()).getTime();
+  //             window.firstAnimate = false; 
+  //           }
+  //           let now = (new Date()).getTime();
+  //           // console.log(now-window.startTime)
+  //           if (now - window.startTime > delay) {
+  //             // console.log('New PSD Sent in')
+  //             model_runner.generate(window.psd)
+  //             window.startTime =  (new Date()).getTime();
+  //           }
+  //         }
+  //       }
+  //     } 
+  //   return null
+  //   });
+  // }
 
   return (
     <React.Fragment>
@@ -213,7 +212,6 @@ export function renderModule(channels) {
         </Card.Section>
      
         <Card.Section>
-         {RenderMorph()}
           <TextContainer>
           <p> {[ "3) Then connect to EEG to morph face" ]} </p>
           </TextContainer>          

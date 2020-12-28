@@ -61,7 +61,7 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
     if (psd) {
         const zNormalized = tf.tidy(() => {
             //convert psd to tensor
-            console.log('Converting psd to tensor')
+            // console.log('Converting psd to tensor')
             const z = tf.tensor(psd, [1, latent_dim])
 
             //compute mean and variance
@@ -84,14 +84,101 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
             window.thisFace = window.thisFace.sub(zNormalized);
         }
 
-        console.log('Projecting latent vector')
-        const y = model.predict(window.thisFace).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
-        const outPixels = image_enlarge(y, draw_multiplier);
-        let c = document.getElementById("the_canvas");
-        await tf.browser.toPixels(outPixels, c);
-        let d = document.getElementById("other_canvas");
-        await tf.browser.toPixels(outPixels, d);        
+        // console.log('Projecting latent vector')
+        // const y = model.predict(window.thisFace).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
+        // const outPixels = image_enlarge(y, draw_multiplier);
+        // let c = document.getElementById("the_canvas");
+        // await tf.browser.toPixels(outPixels, c);
+        // let d = document.getElementById("other_canvas");
+        // await tf.browser.toPixels(outPixels, d);        
     };
+}
+
+
+const tensor_length = function(tensor, dim) {
+    return tf.abs(tf.sub(tf.norm(tensor), tf.sqrt(dim)))
+}
+
+async function computing_fit_target_latent_space(model, draw_multiplier, latent_dim, input_image) {
+    console.log('Finding the closest vector in latent space');
+
+    // Define the two canvas names
+    let the_canvas = document.getElementById("the_canvas");
+    let the_other_canvas = document.getElementById("the_other_canvas");
+
+    // Get the generated image from other canvas and convert to tensor
+    // target_image is a Uint8ClampedArray
+    // target_image_tensor is a [256, 256, 3] Int32Array, range [0, 255]
+    // var ctx = the_other_canvas.getContext("2d");
+    // let target_image = ctx.getImageData(0, 0, 256, 256);
+    console.log('inside GAN.js', input_image)
+    let target_image_tensor = input_image;
+
+    // Create new random vector in latent space to start from
+    // z is sampled from normal distribution
+    // mean of 0, standard deviation of 1
+    const z = tf.variable(tf.randomNormal([1, latent_dim]));
+  
+    const generate_and_enlarge_image = function(first_time) {
+        // rescale only on first generation by multiplying by 255
+        const scaler = (first_time === true) ? 255 : 1
+
+        // model outputs values between [-1, 1]
+        const y_unnormalize = model.predict(z).squeeze().transpose([1, 2, 0]);
+        // scale the values to the range [0, 1]
+        const y_small = y_unnormalize.div(tf.scalar(2)).add(tf.scalar(0.5)).mul(scaler);
+        // Enlarge the image to fit the canvas
+        let y = image_enlarge(y_small, draw_multiplier);
+
+        return y;
+    }
+
+    const loss = function(pred, label) {
+        return pred.sub(label).abs().mean();
+    }
+
+    const _loss_function = function() {
+        // Generate Random image and compute loss
+        const predicted_image_tensor = generate_and_enlarge_image();
+
+        var computed_loss = loss(predicted_image_tensor, target_image_tensor);
+
+        computed_loss.data().then(l => {
+            console.log('Loss: ', l[0]);
+        });
+
+        // Add regularization to the loss function
+        const regularize = tensor_length(z, latent_dim);
+        computed_loss = tf.add(computed_loss, regularize);
+
+        return computed_loss
+    }
+
+    // Define an optimizer
+    const learningRate = 0.05;
+    const optimizer = tf.train.adam(learningRate);
+
+    const num_steps = 200;
+    const steps_per_image = 5;
+
+    // Train the model.
+    for (let i = 0; i < num_steps; i++ ) {
+
+        // Compute and apply gradients
+        let {value, grads} = optimizer.computeGradients(_loss_function, [z]);
+        optimizer.applyGradients(grads);
+
+        // put image on canvas periodically and at end
+        if (i % steps_per_image === 0 | i === num_steps) {
+
+            // Generate the new best image
+            let first_time = false;
+            let y = generate_and_enlarge_image(first_time) 
+
+            // Print it to the top canvas
+            await tf.browser.toPixels(y, the_canvas);
+        }
+    }
 }
 
 export class ModelRunner {
@@ -116,7 +203,7 @@ export class ModelRunner {
             this.model_promise = this.model_promise_cache[model_name];
         } else {
             this.model_promise = tf.loadLayersModel(model_url);
-            window.thisFace = tf.randomNormal([1, model_latent_dim]);
+            // window.thisFace = tf.randomNormal([1, model_latent_dim]);
 
             this.model_promise.then((model) => {
                 return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
@@ -145,6 +232,23 @@ export class ModelRunner {
         // Replace with something like
         // window.thisFace = window.webFace;
         window.thisFace = tf.randomNormal([1, model_latent_dim]);
+    }
+
+    project(model_name, input_image) {
+        let model_info = all_model_info[this.model_name];
+        let model_size = model_info.model_size,
+            model_latent_dim = model_info.model_latent_dim,
+            draw_multiplier = model_info.draw_multiplier;
+
+        console.log(`Subfunction of Model project `);
+        
+        this.model_promise.then((model) => {
+            return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
+        }).then((model) => {
+            return computing_fit_target_latent_space(model, draw_multiplier, model_latent_dim, input_image)        
+        });
+        
+
     }
 
     generate(psd) {
