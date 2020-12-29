@@ -100,7 +100,6 @@ export function setup(setData, Settings) {
 function projectImage(inputImage) {
   console.log('Projecting image into GAN latent space')
   console.log('Image going in is:', inputImage)
-  model_runner.setup_model(model_name)
   return model_runner.project(model_name, inputImage)
 }
 
@@ -115,7 +114,8 @@ export function renderModule(channels) {
   const WebcamCapture = () => {
     const webcamRef = React.useRef(null);
     const [imgSrc, setImgSrc] = React.useState(null);
-
+    const [tenSrc, setTenSrc] = React.useState(null);
+    model_runner.setup_model(model_name)
 
     const capture = React.useCallback(() => {
         const imageSrc = webcamRef.current.getScreenshot();
@@ -126,16 +126,19 @@ export function renderModule(channels) {
         // document.body.appendChild(image);
         image.onload = function(){
           // console.log('image width ' + image.width); // image is loaded and we have image width 
-          var outTensor = tf.browser.fromPixels(image);
-          console.log(outTensor)
-          outTensor = tf.image.resizeBilinear(outTensor, [256, 256])
-          //project the image from webcam into gan with this API call
-          projectImage(outTensor)
+          var tensorSrc = tf.browser.fromPixels(image);
+          tensorSrc = tf.image.resizeBilinear(tensorSrc, [256, 256])
+          setTenSrc(tensorSrc)
 
         }
-      }, [webcamRef, setImgSrc]
-
+      }, [webcamRef, setImgSrc, setTenSrc]
     );
+
+    //project the image from webcam into gan with this API call
+    const project = function() {
+          projectImage(tenSrc)
+    }
+   
 
     return(
       <React.Fragment>
@@ -161,6 +164,8 @@ export function renderModule(channels) {
           )}
           <ButtonGroup>
           <Button onClick={capture}>Capture photo</Button> 
+          <Button onClick={project}>Project Image</Button> 
+
           </ButtonGroup>
 
         </Card.Section>

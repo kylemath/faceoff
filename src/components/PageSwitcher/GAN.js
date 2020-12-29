@@ -40,7 +40,7 @@ function image_enlarge(y, draw_multiplier) {
     ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
 }
 
-let dampingOfChange = 10; //smaller is more change
+let dampingOfChange = 100; //smaller is more change
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
@@ -112,6 +112,8 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     // var ctx = the_other_canvas.getContext("2d");
     // let target_image = ctx.getImageData(0, 0, 256, 256);
     console.log('inside GAN.js', input_image)
+
+
     let target_image_tensor = input_image;
     target_image_tensor.max().data().then(function(value) {
         console.log('target_image_tensor_max', value);
