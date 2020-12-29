@@ -25,7 +25,7 @@ import * as tf from '@tensorflow/tfjs';
 
 let model_runner = new funGAN.ModelRunner();
 let model_name = 'dcgan64';
-let delay = 100;
+let delay = 50;
 
 export function getSettings () {
   return {
