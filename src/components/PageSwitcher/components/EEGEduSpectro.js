@@ -22,11 +22,9 @@ import * as tf from '@tensorflow/tfjs';
 let model_runner = new funGAN.ModelRunner();
 let model_name = 'dcgan64';
 let delay = 50;
-
-let num_projections = 4;
+let num_projections = 2;
 
 model_runner.setup_model(model_name)
-
 
 export function getSettings () {
   return {
@@ -58,7 +56,6 @@ export function buildPipe(Settings) {
       samplingRate: Settings.srate
     }),
     fft({ bins: Settings.bins }),
-    // sliceFFT([Settings.sliceFFTLow, Settings.sliceFFTHigh]),
     catchError(err => {
       console.log(err);
     })
@@ -114,8 +111,12 @@ export function renderModule(channels) {
     const [tenSrc, setTenSrc] = React.useState(null);
 
     const capture = React.useCallback(() => {
+
+        //get screenshot and set hook
         const imageSrc = webcamRef.current.getScreenshot();
         setImgSrc(imageSrc)
+
+        //convert to image, then tensor, resize, and set hook
         var image = new Image();
         image.src = imageSrc;
         image.onload = function(){
@@ -125,20 +126,16 @@ export function renderModule(channels) {
           console.log('Image aquired from webcam')
 
         }
-      }, [webcamRef, setImgSrc, setTenSrc]
+      }, [webcamRef, setImgSrc, setTenSrc] // variables from inside scope coming out
     );
 
-    //project the image from webcam into gan with this API call
+    //project the image from webcam into gan for each canvas
     const project = function() {
-
-      for (let i = 0; i < num_projections; i++) {
-        let thiscanvas = ["#" + i]
-        projectImage(tenSrc, thiscanvas)
+      for (let icanvas = 0; icanvas < num_projections; icanvas++) {
+        projectImage(tenSrc, ["#" + icanvas])
       }     
-
     }
    
-
     return(
       <React.Fragment>
         <Card.Section>
@@ -168,19 +165,16 @@ export function renderModule(channels) {
           >Project Image</Button> 
 
           </ButtonGroup>
-
         </Card.Section>
-
       </React.Fragment>
     )
   }
 
-
-
-
   function RenderMorph() {
     Object.values(channels.data).map((channel, index) => {
-      if (channel.datasets[0].data) {
+      if (channel.datasets[0].data) { 
+
+        //only left frontal channel
         if (index === 1) {
           window.psd = channel.datasets[0].data;
           window.freqs = channel.xLabels;
@@ -188,15 +182,18 @@ export function renderModule(channels) {
             window.bins = channel.xLabels.length;
           } 
           if (window.freqs) {
-            //only left frontal channel
+            
+            // timer to only animate psd sample every 'delay' 
             if (window.firstAnimate) {
               window.startTime = (new Date()).getTime();
               window.firstAnimate = false; 
             }
             let now = (new Date()).getTime();
             if (now - window.startTime > delay) {
-              model_runner.generate(window.psd)
               window.startTime =  (new Date()).getTime();
+
+              //psd passed into the model generator function
+              model_runner.generate(window.psd)
             }
           }
         }
@@ -208,24 +205,19 @@ export function renderModule(channels) {
   return (
     <React.Fragment>
       <Card >
-
         <Card.Section>
         {WebcamCapture()}
         {RenderMorph()}
-
         {[...Array(num_projections)].map((x, i) => 
           <Canvas canvas={["#" + i]} key={i} /> // loop to create multiple canvases
-        )}
-                  
-       
+        )}    
         </Card.Section>
      
         <Card.Section>
           <TextContainer>
           <p> {[ "3) Then connect to EEG to morph face" ]} </p>
           </TextContainer>          
-          <Canvas canvas="other_canvas"/>       
-
+          <Canvas canvas="other_canvas"/>        
           <ButtonGroup>
             <Button
               primary = {window.psd}
@@ -248,7 +240,6 @@ export function renderModule(channels) {
           </ButtonGroup>
         </Card.Section>        
       </Card>
-
     </React.Fragment>
   );
 }

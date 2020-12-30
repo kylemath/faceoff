@@ -1,7 +1,13 @@
 import * as tf from '@tensorflow/tfjs';
 
-// Gan Stuff
+let dampingOfChange = 10; //smaller is more change
+const learningRate = 0.05; 
+const num_steps = 20; // training steps
+const steps_per_image = 2; //how often to plot imag
 
+//
+
+// Gan Stuff
 let all_model_info = {
     dcgan64: {
         description: 'DCGAN, 64x64 (16 MB)',
@@ -39,8 +45,6 @@ function image_enlarge(y, draw_multiplier) {
     ).expandDims(1).tile([1, draw_multiplier, 1, 1]
     ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
 }
-
-let dampingOfChange = 10; //smaller is more change
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
@@ -83,10 +87,9 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
             window.thisFace = window.thisFace.sub(zNormalized);
         }
 
+        // used current tensor to make face, enlarge and plot
         const y = model.predict(window.thisFace).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
         const outPixels = image_enlarge(y, draw_multiplier);
-        // let c = document.getElementById("the_canvas");
-        // await tf.browser.toPixels(outPixels, c);
         let d = document.getElementById("other_canvas");
         await tf.browser.toPixels(outPixels, d);        
     };
@@ -104,7 +107,6 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
     // Define the two canvas names
     let the_canvas = document.getElementById(canvas);
-    // let the_other_canvas = document.getElementById("the_other_canvas");
 
     // Get the generated image from other canvas and convert to tensor
     // target_image is a Uint8ClampedArray
@@ -146,11 +148,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
         var computed_loss = loss(predicted_image_tensor, target_image_tensor);
 
-        // computed_loss.data().then(l => {
-        //     console.log('Loss: ', l[0]);
-        // });
-
-        // Add regularization to the loss function
+         // Add regularization to the loss function
         const regularize = tensor_length(z, latent_dim);
         computed_loss = tf.add(computed_loss, regularize);
 
@@ -158,11 +156,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     }
 
     // Define an optimizer
-    const learningRate = 0.05;
     const optimizer = tf.train.adam(learningRate);
-
-    const num_steps = 20;
-    const steps_per_image = 2;
 
     // Train the model.
     for (let i = 0; i < num_steps; i++ ) {
@@ -187,7 +181,6 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     }
 
     //save to window to load into morpher
-
     window.tfout[canvas] = z;
 }
 
@@ -239,6 +232,7 @@ export class ModelRunner {
         console.log(`Seeding model from Webcam image `);
         // Replace with something like
         
+        // add faces for each face in a canvas, then divide by number
         for (var key in window.tfout) {
             if (key === "the_canvas0") {
                 window.thisFace = window.tfout[key]
@@ -270,7 +264,6 @@ export class ModelRunner {
             model_latent_dim = model_info.model_latent_dim,
             draw_multiplier = model_info.draw_multiplier;
 
-        // console.log('Generating image...');
         this.model_promise.then((model) => {
             return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
         }).then((model) => {
