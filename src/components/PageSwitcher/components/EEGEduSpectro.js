@@ -21,9 +21,9 @@ import * as tf from '@tensorflow/tfjs';
 
 let model_runner = new funGAN.ModelRunner();
 let model_name = 'dcgan64';
-let delay = 100;
+let delay = 50;
 
-let num_projections = 2;
+let num_projections = 4;
 
 model_runner.setup_model(model_name)
 
@@ -69,8 +69,6 @@ export function buildPipe(Settings) {
 }
 
 export function setup(setData, Settings) {
-
-  model_runner.generate();
 
   console.log("Subscribing to " + Settings.name);
 
