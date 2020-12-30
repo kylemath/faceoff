@@ -19,12 +19,10 @@ import * as funGAN from '../GAN'
 import Webcam from "react-webcam"
 import * as tf from '@tensorflow/tfjs';
 
-let model_runner = new funGAN.ModelRunner();
-let model_name = 'dcgan64';
-let delay = 50;
-let num_projections = 2;
-
-model_runner.setup_model(model_name)
+// SETTINGS
+let model_name = 'dcgan64'; //resnet128, dcgan64
+let delay = 50; //msec between images in the morph sequence, can be low for 64, but should be 1000 for 128
+let num_projections = 2; //number of latent projection of webcam image
 
 export function getSettings () {
   return {
@@ -37,6 +35,10 @@ export function getSettings () {
     name: 'EEG'
   }
 };
+
+//Setup model
+let model_runner = new funGAN.ModelRunner();
+model_runner.setup_model(model_name)
 
 export function buildPipe(Settings) {
   if (window.subscriptionSpectro) window.subscriptionSpectro.unsubscribe();

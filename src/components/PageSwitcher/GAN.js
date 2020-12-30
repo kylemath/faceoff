@@ -1,11 +1,10 @@
 import * as tf from '@tensorflow/tfjs';
 
+// SETTINGS
 let dampingOfChange = 10; //smaller is more change
 const learningRate = 0.05; 
 const num_steps = 20; // training steps
 const steps_per_image = 2; //how often to plot imag
-
-//
 
 // Gan Stuff
 let all_model_info = {
@@ -111,12 +110,9 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     // Get the generated image from other canvas and convert to tensor
     // target_image is a Uint8ClampedArray
     // target_image_tensor is a [256, 256, 3] Int32Array, range [0, 255]
-    // var ctx = the_other_canvas.getContext("2d");
+    // old call to get from canvas
     // let target_image = ctx.getImageData(0, 0, 256, 256);
-
-
     let target_image_tensor = input_image;
-
 
     // Create new random vector in latent space to start from
     // z is sampled from normal distribution
