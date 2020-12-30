@@ -15,17 +15,18 @@ import {
 import * as generalTranslations from "./translations/en";
 
 import Canvas from '../Canvas'
-import OtherCanvas from '../OtherCanvas'
-
 import * as funGAN from '../GAN'
-
 import Webcam from "react-webcam"
-
 import * as tf from '@tensorflow/tfjs';
 
 let model_runner = new funGAN.ModelRunner();
 let model_name = 'dcgan64';
-let delay = 50;
+let delay = 100;
+
+let num_projections = 2;
+
+model_runner.setup_model(model_name)
+
 
 export function getSettings () {
   return {
@@ -69,7 +70,6 @@ export function buildPipe(Settings) {
 
 export function setup(setData, Settings) {
 
-  model_runner.setup_model(model_name)
   model_runner.generate();
 
   console.log("Subscribing to " + Settings.name);
@@ -97,10 +97,9 @@ export function setup(setData, Settings) {
   }
 }
 
-function projectImage(inputImage) {
-  console.log('Projecting image into GAN latent space')
-  console.log('Image going in is:', inputImage)
-  return model_runner.project(model_name, inputImage)
+function projectImage(inputImage, canvas) {
+  console.log('Projecting image into GAN latent space on canvas: ' + canvas[0])
+  return model_runner.project(model_name, inputImage, canvas)
 }
 
 export function renderModule(channels) {
@@ -115,20 +114,17 @@ export function renderModule(channels) {
     const webcamRef = React.useRef(null);
     const [imgSrc, setImgSrc] = React.useState(null);
     const [tenSrc, setTenSrc] = React.useState(null);
-    model_runner.setup_model(model_name)
 
     const capture = React.useCallback(() => {
         const imageSrc = webcamRef.current.getScreenshot();
         setImgSrc(imageSrc)
-        // console.log('imageSrc Set')
         var image = new Image();
         image.src = imageSrc;
-        // document.body.appendChild(image);
         image.onload = function(){
-          // console.log('image width ' + image.width); // image is loaded and we have image width 
           var tensorSrc = tf.browser.fromPixels(image);
           tensorSrc = tf.image.resizeBilinear(tensorSrc, [256, 256])
           setTenSrc(tensorSrc)
+          console.log('Image aquired from webcam')
 
         }
       }, [webcamRef, setImgSrc, setTenSrc]
@@ -136,7 +132,12 @@ export function renderModule(channels) {
 
     //project the image from webcam into gan with this API call
     const project = function() {
-          projectImage(tenSrc)
+
+      for (let i = 0; i < num_projections; i++) {
+        let thiscanvas = ["#" + i]
+        projectImage(tenSrc, thiscanvas)
+      }     
+
     }
    
 
@@ -163,8 +164,10 @@ export function renderModule(channels) {
             />
           )}
           <ButtonGroup>
-          <Button onClick={capture}>Capture photo</Button> 
-          <Button onClick={project}>Project Image</Button> 
+          <Button onClick={capture} disabled={imgSrc}
+          >Capture photo</Button> 
+          <Button onClick={project} disabled={!imgSrc}
+          >Project Image</Button> 
 
           </ButtonGroup>
 
@@ -189,14 +192,11 @@ export function renderModule(channels) {
           if (window.freqs) {
             //only left frontal channel
             if (window.firstAnimate) {
-              console.log('FirstAnimate');
               window.startTime = (new Date()).getTime();
               window.firstAnimate = false; 
             }
             let now = (new Date()).getTime();
-            // console.log(now-window.startTime)
             if (now - window.startTime > delay) {
-              // console.log('New PSD Sent in')
               model_runner.generate(window.psd)
               window.startTime =  (new Date()).getTime();
             }
@@ -212,16 +212,21 @@ export function renderModule(channels) {
       <Card >
 
         <Card.Section>
-         {WebcamCapture()}
-         {RenderMorph()}
-         <Canvas />       
+        {WebcamCapture()}
+        {RenderMorph()}
+
+        {[...Array(num_projections)].map((x, i) => 
+          <Canvas canvas={["#" + i]} key={i} /> // loop to create multiple canvases
+        )}
+                  
+       
         </Card.Section>
      
         <Card.Section>
           <TextContainer>
           <p> {[ "3) Then connect to EEG to morph face" ]} </p>
           </TextContainer>          
-          <OtherCanvas />       
+          <Canvas canvas="other_canvas"/>       
 
           <ButtonGroup>
             <Button
@@ -237,7 +242,7 @@ export function renderModule(channels) {
               primary = {window.psd}
               disabled={!window.psd}
               onClick={() => {
-                model_runner.webseed(model_name)
+                model_runner.webseed(model_name, num_projections)
               }}
             >
               {'Seed from Webcam Image'}

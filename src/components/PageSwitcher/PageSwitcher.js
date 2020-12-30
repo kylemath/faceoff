@@ -74,6 +74,7 @@ export function PageSwitcher() {
   // Render the entire page using above functions
   return (
     <React.Fragment>
+      <funSpectro.renderModule data={spectroData}/>
       <Card sectioned>
         <Stack>
           <ButtonGroup>
@@ -115,7 +116,6 @@ export function PageSwitcher() {
         </Stack>
       </Card>
       {funSpectro.renderSliders(setSpectroData, setSpectroSettings, status, spectroSettings)}
-      <funSpectro.renderModule data={spectroData}/>
     </React.Fragment>
   );
 }
