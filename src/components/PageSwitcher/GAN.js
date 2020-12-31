@@ -173,6 +173,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     }
 
     //save to window to load into morpher
+    console.log('writing canvas to canvas logger', canvas)
     window.tfout[canvas] = z;
 }
 
@@ -188,7 +189,6 @@ export class ModelRunner {
         this.model_name = model_name;
         let model_info = all_model_info[model_name];
         let model_url = model_info.model_url,
-            model_latent_dim = model_info.model_latent_dim,
             description = model_info.description;
 
 
@@ -198,7 +198,6 @@ export class ModelRunner {
             this.model_promise = this.model_promise_cache[model_name];
         } else {
             this.model_promise = tf.loadLayersModel(model_url);
-            window.thisFace = tf.randomNormal([1, model_latent_dim]);
 
             this.model_promise.then((model) => {
                 return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
@@ -227,7 +226,7 @@ export class ModelRunner {
         // add faces for each face in a canvas, then divide by number
         console.log(window.tfout)
         for (var key in window.tfout) {
-            if (key === "the_canvas0") {
+            if (key === "#0") {
                 window.thisFace = window.tfout[key]
             } else {          
                 window.thisFace = tf.add(window.thisFace, window.tfout[key])

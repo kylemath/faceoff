@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, RangeSlider, Button, ButtonGroup, TextContainer} from "@shopify/polaris";
+import { Card, RangeSlider, Button, ButtonGroup, TextContainer, Select} from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -19,8 +19,7 @@ import * as funGAN from '../GAN'
 import Webcam from "react-webcam"
 import * as tf from '@tensorflow/tfjs';
 
-// SETTINGS
-let model_name = 'dcgan64'; //resnet128, dcgan64
+let model_runner = new funGAN.ModelRunner();
 
 export function getSettings () {
   return {
@@ -36,19 +35,16 @@ export function getSettings () {
 
 export function getLearningSettings () {
   return {
-    learningRate: .01,
+    learningRate: .05,
     trainingSteps: 100, 
-    stepsPerImage: 10,
-    numProjections: 2, //number of latent projection of webcam image
-    dampingOfChange: 10, //smaller is more change
-    morphDelay: 50 //msec between images in the morph sequence, can be low for 64, but should be 1000 for 128
-
+    stepsPerImage: 25,
+    numProjections: 1, //number of latent projection of webcam image
+    dampingOfChange: 20, //smaller is more change
+    morphDelay: 500, //msec between images in the morph sequence, can be low for 64, but should be 1000 for 128
+    modelName: 'dcgan64'
   }
 };
 
-//Setup model
-let model_runner = new funGAN.ModelRunner();
-model_runner.setup_model(model_name)
 
 export function buildPipe(Settings) {
   if (window.subscriptionSpectro) window.subscriptionSpectro.unsubscribe();
@@ -104,10 +100,11 @@ export function setup(setData, Settings) {
   }
 }
 
-function projectImage(inputImage, canvas, settings) {
-  console.log('Projecting image into GAN latent space on canvas: ' + canvas[0])
-  return model_runner.project(model_name, inputImage, canvas, settings)
-}
+const chartTypes = [
+  { label: 'dcgan64', value: 'dcgan64'},
+  { label: 'resnet128', value: 'resnet128'}, 
+  { label: 'resnet256', value: 'resnet256'}
+];
 
 export function RenderModule(channels) {
 
@@ -118,6 +115,14 @@ export function RenderModule(channels) {
   };
 
   const [learningSettings, setLearningSettings] = React.useState(getLearningSettings)
+
+  // for picking a new module
+  const [selected, setSelected] = useState('dcgan64');
+  const handleSelectChange = useCallback(value => {
+    setSelected(value);
+    learningSettings.modelName = selected;
+
+  }, [learningSettings, selected]);
 
   const WebcamCapture = () => {
     const webcamRef = React.useRef(null);
@@ -142,6 +147,17 @@ export function RenderModule(channels) {
         }
       }, [webcamRef, setImgSrc, setTenSrc] // variables from inside scope coming out
     );
+
+    //setup model
+    const setupModel = function() {
+      model_runner.setup_model(learningSettings.modelName)
+    }     
+
+    const projectImage = function(inputImage, canvas, settings) {
+      console.log('Projecting image into GAN latent space on canvas: ' + canvas[0])
+      console.log(learningSettings.modelName)
+      return model_runner.project(learningSettings.modelName, inputImage, canvas, settings)
+    }
 
     //project the image from webcam into gan for each canvas
     const project = function() {
@@ -169,6 +185,13 @@ export function RenderModule(channels) {
     return(
       <React.Fragment>
         <Card.Section>
+            <Select
+              label={""}
+              options={chartTypes}
+              onChange={handleSelectChange}
+              value={selected}
+            />
+            <Button onClick={setupModel}>Setup model</Button>
             <TextContainer>
             <p> {[ "1) View webcam, line up face, and take photo" ]} </p>
             </TextContainer>
@@ -221,7 +244,7 @@ export function RenderModule(channels) {
           />
           <RangeSlider 
             disabled={window.isprojecting}
-            min={2} step={1} max={10} 
+            min={1} step={1} max={10} 
             label={'Number of parallel projections: ' + learningSettings.numProjections} 
             value={learningSettings.numProjections} 
             onChange={handleNumProjectionsRangeSliderChange} 
@@ -258,8 +281,10 @@ export function RenderModule(channels) {
             if (now - window.startTime > learningSettings.morphDelay) {
               window.startTime =  (new Date()).getTime();
 
-              //psd passed into the model generator function
-              model_runner.generate(window.psd, learningSettings)
+              if (window.thisFace) {
+                //psd passed into the model generator function
+                model_runner.generate(window.psd, learningSettings)
+              }
             }
           }
         }
@@ -317,7 +342,7 @@ export function RenderModule(channels) {
               primary = {window.psd}
               disabled={!window.psd}
               onClick={() => {
-                model_runner.reseed(model_name)
+                model_runner.reseed(learningSettings.modelName)
               }}
             >
               {'Seed from Random Face'}
@@ -326,7 +351,7 @@ export function RenderModule(channels) {
               primary = {window.psd}
               disabled={!window.psd | !window.tfout["#0"]}
               onClick={() => {
-                model_runner.webseed(model_name, learningSettings.numProjections)
+                model_runner.webseed(learningSettings.modelName, learningSettings.numProjections)
               }}
             >
               {'Seed from Webcam Image'}
