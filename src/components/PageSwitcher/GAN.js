@@ -1,10 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
 
-// SETTINGS
-let dampingOfChange = 10; //smaller is more change
-const num_steps = 200; // training steps
-const steps_per_image = 5; //how often to plot imag
-
 // Gan Stuff
 let all_model_info = {
     dcgan64: {
@@ -59,7 +54,7 @@ function resolve_after_ms(x, ms) {
     });
 }
 
-async function computing_generate_main(model, size, draw_multiplier, latent_dim, psd) {
+async function computing_generate_main(model, size, draw_multiplier, latent_dim, psd, settings) {
     if (psd) {
         const zNormalized = tf.tidy(() => {
             //convert psd to tensor
@@ -74,7 +69,7 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
 
             //subtract mean and divide by SD to normalize
             var zMeanSubtract = z.sub(psdMean);
-            var zNormalized = zMeanSubtract.div(psdSD).div(dampingOfChange);
+            var zNormalized = zMeanSubtract.div(psdSD).div(settings.dampingOfChange);
             return zNormalized;
         });
 
@@ -101,7 +96,7 @@ const tensor_length = function(tensor, dim) {
 
 window.tfout = {};
 
-async function computing_fit_target_latent_space(model, draw_multiplier, latent_dim, input_image, canvas) {
+async function computing_fit_target_latent_space(model, draw_multiplier, latent_dim, input_image, canvas, settings) {
     console.log('Finding the closest vector in latent space on canvas: ', canvas[0]);
 
     // Define the two canvas names
@@ -152,21 +147,21 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     }
 
     // Define an optimizer
-    const optimizer = tf.train.adam(window.learningRate);
+    const optimizer = tf.train.adam(settings.learningRate);
     console.log(optimizer)
     // Train the model.
-    for (let i = 0; i < num_steps; i++ ) {
+    for (let i = 0; i < settings.trainingSteps; i++ ) {
 
         // Compute and apply gradients
         let {value, grads} = optimizer.computeGradients(_loss_function, [z]);
         value.data().then(l => {
             console.log('Canvas: ', canvas[0], ', Training Step: ', i, 'Loss: ', 
-                Number.parseFloat(l[0]).toPrecision(5), 'LearningRate: ', window.learningRate)
+                Number.parseFloat(l[0]).toPrecision(5), 'LearningRate: ', settings.learningRate)
         })
         optimizer.applyGradients(grads);
 
         // put image on canvas periodically and at end
-        if (i % steps_per_image === 0 | i === num_steps) {
+        if (i % settings.stepsPerImage === 0 | i === settings.trainingSteps) {
 
             // Generate the new best image
             let first_time = false;
@@ -242,7 +237,7 @@ export class ModelRunner {
         window.thisFace.print()
     }
 
-    project(model_name, input_image, canvas) {
+    project(model_name, input_image, canvas, settings) {
         let model_info = all_model_info[this.model_name];
         let model_latent_dim = model_info.model_latent_dim,
             draw_multiplier = model_info.draw_multiplier;
@@ -250,13 +245,13 @@ export class ModelRunner {
         this.model_promise.then((model) => {
             return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
         }).then((model) => {
-            return computing_fit_target_latent_space(model, draw_multiplier, model_latent_dim, input_image, canvas)        
+            return computing_fit_target_latent_space(model, draw_multiplier, model_latent_dim, input_image, canvas, settings)        
         });
         
 
     }
 
-    generate(psd) {
+    generate(psd, settings) {
         let model_info = all_model_info[this.model_name];
         let model_size = model_info.model_size,
             model_latent_dim = model_info.model_latent_dim,
@@ -265,7 +260,7 @@ export class ModelRunner {
         this.model_promise.then((model) => {
             return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
         }).then((model) => {
-            return computing_generate_main(model, model_size, draw_multiplier, model_latent_dim, psd);
+            return computing_generate_main(model, model_size, draw_multiplier, model_latent_dim, psd, settings);
         });
     }
 }
