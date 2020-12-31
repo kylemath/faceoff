@@ -2,9 +2,8 @@ import * as tf from '@tensorflow/tfjs';
 
 // SETTINGS
 let dampingOfChange = 10; //smaller is more change
-const learningRate = 0.05; 
-const num_steps = 20; // training steps
-const steps_per_image = 2; //how often to plot imag
+const num_steps = 200; // training steps
+const steps_per_image = 5; //how often to plot imag
 
 // Gan Stuff
 let all_model_info = {
@@ -101,6 +100,7 @@ const tensor_length = function(tensor, dim) {
 
 
 window.tfout = {};
+
 async function computing_fit_target_latent_space(model, draw_multiplier, latent_dim, input_image, canvas) {
     console.log('Finding the closest vector in latent space on canvas: ', canvas[0]);
 
@@ -152,15 +152,16 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
     }
 
     // Define an optimizer
-    const optimizer = tf.train.adam(learningRate);
-
+    const optimizer = tf.train.adam(window.learningRate);
+    console.log(optimizer)
     // Train the model.
     for (let i = 0; i < num_steps; i++ ) {
 
         // Compute and apply gradients
         let {value, grads} = optimizer.computeGradients(_loss_function, [z]);
         value.data().then(l => {
-            console.log('Canvas: ', canvas[0], ', Training Step: ', i, 'Loss: ', Number.parseFloat(l[0]).toPrecision(5))
+            console.log('Canvas: ', canvas[0], ', Training Step: ', i, 'Loss: ', 
+                Number.parseFloat(l[0]).toPrecision(5), 'LearningRate: ', window.learningRate)
         })
         optimizer.applyGradients(grads);
 
@@ -229,6 +230,7 @@ export class ModelRunner {
         // Replace with something like
         
         // add faces for each face in a canvas, then divide by number
+        console.log(window.tfout)
         for (var key in window.tfout) {
             if (key === "the_canvas0") {
                 window.thisFace = window.tfout[key]
@@ -237,7 +239,7 @@ export class ModelRunner {
             }
         }
         window.thisFace = tf.div(window.thisFace, tf.scalar(num_projections) )
-
+        window.thisFace.print()
     }
 
     project(model_name, input_image, canvas) {

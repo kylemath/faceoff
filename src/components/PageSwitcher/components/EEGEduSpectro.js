@@ -23,6 +23,7 @@ import * as tf from '@tensorflow/tfjs';
 let model_name = 'dcgan64'; //resnet128, dcgan64
 let delay = 50; //msec between images in the morph sequence, can be low for 64, but should be 1000 for 128
 let num_projections = 2; //number of latent projection of webcam image
+window.learningRate = 0.01 //learning rate for optimizer
 
 export function getSettings () {
   return {
@@ -36,6 +37,11 @@ export function getSettings () {
   }
 };
 
+export function getLearningSettings () {
+  return {
+    learningRate: .01
+  }
+};
 //Setup model
 let model_runner = new funGAN.ModelRunner();
 model_runner.setup_model(model_name)
@@ -112,6 +118,8 @@ export function renderModule(channels) {
     const [imgSrc, setImgSrc] = React.useState(null);
     const [tenSrc, setTenSrc] = React.useState(null);
 
+    const [learningSettings, setLearningSettings] = React.useState(getLearningSettings)
+
     const capture = React.useCallback(() => {
 
         //get screenshot and set hook
@@ -136,6 +144,10 @@ export function renderModule(channels) {
       for (let icanvas = 0; icanvas < num_projections; icanvas++) {
         projectImage(tenSrc, ["#" + icanvas])
       }     
+    }
+
+    function handleLearningRateRangeSliderChange(value) {
+      setLearningSettings(prevState => ({...prevState, learningRate: value}));
     }
    
     return(
@@ -165,8 +177,16 @@ export function renderModule(channels) {
           >Capture photo</Button> 
           <Button onClick={project} disabled={!imgSrc}
           >Project Image</Button> 
-
           </ButtonGroup>
+          <RangeSlider 
+            disabled={window.isprojecting}
+            min={.001} step={.001} max={.1} 
+            label={'Optimizer Learning Rate: ' + learningSettings.learningRate} 
+            value={learningSettings.learningRate} 
+            onChange={handleLearningRateRangeSliderChange} 
+          />
+          2) Then project your picture into the latent space
+
         </Card.Section>
       </React.Fragment>
     )
@@ -232,7 +252,7 @@ export function renderModule(channels) {
             </Button>
             <Button
               primary = {window.psd}
-              disabled={!window.psd}
+              disabled={!window.psd | !window.tfout["#0"]}
               onClick={() => {
                 model_runner.webseed(model_name, num_projections)
               }}
