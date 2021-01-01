@@ -19,6 +19,8 @@ import * as funGAN from '../GAN'
 import Webcam from "react-webcam"
 import * as tf from '@tensorflow/tfjs';
 
+import { FullScreen, useFullScreenHandle } from "react-full-screen"
+
 let model_runner = new funGAN.ModelRunner();
 
 export function getSettings () {
@@ -320,6 +322,8 @@ export function RenderModule(channels) {
     )
   }
 
+  const handle = useFullScreenHandle();
+
   return (
     <React.Fragment>
       <Card >
@@ -336,7 +340,11 @@ export function RenderModule(channels) {
           <p> {[ "3) Then connect to EEG to morph face" ]} </p>
           </TextContainer>          
           {RenderMorph()}
-          <Canvas canvas="other_canvas"/>        
+
+          <FullScreen handle={handle} >
+            <Canvas canvas="other_canvas"/>  
+          </FullScreen>      
+
           <ButtonGroup>
             <Button
               primary = {window.psd}
@@ -355,7 +363,12 @@ export function RenderModule(channels) {
               }}
             >
               {'Seed from Webcam Best Fit'}
-            </Button>            
+            </Button>  
+          <Button onClick={handle.enter}
+                  disabled={!window.psd}
+          >
+           Enter Fullscreen
+          </Button>                      
           </ButtonGroup>
         </Card.Section>        
       </Card>
