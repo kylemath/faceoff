@@ -36,11 +36,11 @@ export function getSettings () {
 export function getLearningSettings () {
   return {
     learningRate: .05,
-    trainingSteps: 100, 
-    stepsPerImage: 25,
+    trainingSteps: 150, 
+    stepsPerImage: 5,
     numProjections: 1, //number of latent projection of webcam image
-    dampingOfChange: 20, //smaller is more change
-    morphDelay: 500, //msec between images in the morph sequence, can be low for 64, but should be 1000 for 128
+    dampingOfChange: 10, //smaller is more change
+    morphDelay: 50, //msec between images in the morph sequence, can be low for 64, but should be 1000 for 128
     modelName: 'dcgan64'
   }
 };
