@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, RangeSlider, Button, ButtonGroup} from "@shopify/polaris";
+import { Card, RangeSlider, Button, ButtonGroup, TextContainer, Select} from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -15,16 +15,11 @@ import {
 import * as generalTranslations from "./translations/en";
 
 import Canvas from '../Canvas'
-
 import * as funGAN from '../GAN'
-
 import Webcam from "react-webcam"
-
 import * as tf from '@tensorflow/tfjs';
 
 let model_runner = new funGAN.ModelRunner();
-let model_name = 'resnet128';
-let delay = 1000;
 
 export function getSettings () {
   return {
@@ -37,6 +32,19 @@ export function getSettings () {
     name: 'EEG'
   }
 };
+
+export function getLearningSettings () {
+  return {
+    learningRate: .05,
+    trainingSteps: 100, 
+    stepsPerImage: 25,
+    numProjections: 1, //number of latent projection of webcam image
+    dampingOfChange: 20, //smaller is more change
+    morphDelay: 500, //msec between images in the morph sequence, can be low for 64, but should be 1000 for 128
+    modelName: 'dcgan64'
+  }
+};
+
 
 export function buildPipe(Settings) {
   if (window.subscriptionSpectro) window.subscriptionSpectro.unsubscribe();
@@ -56,7 +64,6 @@ export function buildPipe(Settings) {
       samplingRate: Settings.srate
     }),
     fft({ bins: Settings.bins }),
-    // sliceFFT([Settings.sliceFFTLow, Settings.sliceFFTHigh]),
     catchError(err => {
       console.log(err);
     })
@@ -67,9 +74,6 @@ export function buildPipe(Settings) {
 }
 
 export function setup(setData, Settings) {
-
-  model_runner.setup_model(model_name)
-  model_runner.generate();
 
   console.log("Subscribing to " + Settings.name);
 
@@ -96,27 +100,13 @@ export function setup(setData, Settings) {
   }
 }
 
+const chartTypes = [
+  { label: 'dcgan64', value: 'dcgan64'},
+  { label: 'resnet128', value: 'resnet128'}, 
+  { label: 'resnet256', value: 'resnet256'}
+];
 
-// function find_closest_latent_vector(initial_vector, num_optimization_steps, steps_per_image) {
-//   var vector = new tf.Variable(initial_vector);
-//   var optimizer = tf.train.adam(0.01);
-//   var loss_fn = new tf.metrics.meanAbsoluteError() 
-
-// }
-
-// function projectImage(inputImage) {
-//   console.log('Projecting image into GAN latent space')
-//   var initial_vector = tf.randomNormal([1, 128])
-//   var start_image = model_runner.generate(initial_vector)
-//   //Plot image
-
-//   const num_optimization_steps = 200;
-//   const steps_per_image = 5;
-//   var trainImages = find_closest_latent_vector(initial_vector, num_optimization_steps, steps_per_image)
-
-// }
-
-export function renderModule(channels) {
+export function RenderModule(channels) {
 
   const videoConstraints = {
     width: { min: 256 },
@@ -124,58 +114,156 @@ export function renderModule(channels) {
     aspectRatio: 1
   };
 
+  const [learningSettings, setLearningSettings] = React.useState(getLearningSettings)
+
+  // for picking a new module
+  const [selected, setSelected] = useState('dcgan64');
+  const handleSelectChange = useCallback(value => {
+    setSelected(value);
+    learningSettings.modelName = selected;
+
+  }, [learningSettings, selected]);
+
   const WebcamCapture = () => {
     const webcamRef = React.useRef(null);
     const [imgSrc, setImgSrc] = React.useState(null);
+    const [tenSrc, setTenSrc] = React.useState(null);
 
     const capture = React.useCallback(() => {
+
+        //get screenshot and set hook
         const imageSrc = webcamRef.current.getScreenshot();
         setImgSrc(imageSrc)
-        console.log('I am right here an I have the image source file')
+
+        //convert to image, then tensor, resize, and set hook
         var image = new Image();
         image.src = imageSrc;
-        // document.body.appendChild(image);
         image.onload = function(){
-          console.log('image width ' + image.width); // image is loaded and we have image width 
-          var outTensor = tf.browser.fromPixels(image);
-          console.log(outTensor)
-
-          //project the image from webcam into gan with this API call
-          // var projImage = projectImage(outTensor)
-
+          var tensorSrc = tf.browser.fromPixels(image);
+          tensorSrc = tf.image.resizeBilinear(tensorSrc, [256, 256])
+          setTenSrc(tensorSrc)
+          console.log('Image aquired from webcam')
 
         }
-      }, [webcamRef, setImgSrc]
-
+      }, [webcamRef, setImgSrc, setTenSrc] // variables from inside scope coming out
     );
 
+    //setup model
+    const setupModel = function() {
+      model_runner.setup_model(learningSettings.modelName)
+    }     
 
+    const projectImage = function(inputImage, canvas, settings) {
+      console.log('Projecting image into GAN latent space on canvas: ' + canvas[0])
+      console.log(learningSettings.modelName)
+      return model_runner.project(learningSettings.modelName, inputImage, canvas, settings)
+    }
+
+    //project the image from webcam into gan for each canvas
+    const project = function() {
+      for (let icanvas = 0; icanvas < learningSettings.numProjections; icanvas++) {
+        projectImage(tenSrc, ["#" + icanvas], learningSettings)
+      }     
+    }
+
+    function handleLearningRateRangeSliderChange(value) {
+      setLearningSettings(prevState => ({...prevState, learningRate: value}));
+    }
+
+    function handleTrainingStepsRangeSliderChange(value) {
+      setLearningSettings(prevState => ({...prevState, trainingSteps: value}));
+    }   
+
+    function handleStepsPerImageRangeSliderChange(value) {
+      setLearningSettings(prevState => ({...prevState, stepsPerImage: value}));
+    }   
+
+    function handleNumProjectionsRangeSliderChange(value) {
+      setLearningSettings(prevState => ({...prevState, numProjections: value}));
+    }   
 
     return(
       <React.Fragment>
-        <Webcam
-          audio={false}
-          ref={webcamRef}
-          screenshotFormat="image/jpeg"
-          videoConstraints={videoConstraints}
-          width={256}
-          height={256}
-        />
-        {imgSrc && (
-          <img 
-            src={imgSrc}
-            alt={'dum'}
+        <Card.Section>
+            <Select
+              label={""}
+              options={chartTypes}
+              onChange={handleSelectChange}
+              value={selected}
+            />
+            <Button onClick={setupModel}>Setup model</Button>
+            <TextContainer>
+            <p> {[ "1) View webcam, line up face, and take photo" ]} </p>
+            </TextContainer>
+          {!imgSrc && (
+            <Webcam
+              audio={false}
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              videoConstraints={videoConstraints}
+              width={256}
+              height={256}
+            />
+          )}
+          {imgSrc && (
+            <img 
+              src={imgSrc}
+              alt={'dum'}
+            />
+          )}
+          <ButtonGroup>
+          <Button onClick={capture} disabled={imgSrc}
+          >Capture photo</Button> 
+
+          </ButtonGroup>
+        </Card.Section>
+        <Card.Section>
+          <TextContainer>
+            2) Then project your picture into the latent space
+          </TextContainer>
+          <RangeSlider 
+            disabled={window.isprojecting}
+            min={10} step={10} max={500} 
+            label={'Training Steps: ' + learningSettings.trainingSteps} 
+            value={learningSettings.trainingSteps} 
+            onChange={handleTrainingStepsRangeSliderChange} 
+          />          
+          <RangeSlider 
+            disabled={window.isprojecting}
+            min={.001} step={.001} max={.1} 
+            label={'Optimizer Learning Rate: ' + learningSettings.learningRate} 
+            value={learningSettings.learningRate} 
+            onChange={handleLearningRateRangeSliderChange} 
           />
-        )}
-        <button onClick={capture}>Capture photo</button> 
+          <RangeSlider 
+            disabled={window.isprojecting}
+            min={2} step={1} max={learningSettings.trainingSteps} 
+            label={'Plotting frequency (every n images): ' + learningSettings.stepsPerImage} 
+            value={learningSettings.stepsPerImage} 
+            onChange={handleStepsPerImageRangeSliderChange} 
+          />
+          <RangeSlider 
+            disabled={window.isprojecting}
+            min={1} step={1} max={10} 
+            label={'Number of parallel projections: ' + learningSettings.numProjections} 
+            value={learningSettings.numProjections} 
+            onChange={handleNumProjectionsRangeSliderChange} 
+          />                        
+          <Button onClick={project} disabled={!imgSrc}
+          >Project Image</Button> 
+        </Card.Section>
       </React.Fragment>
     )
   }
 
+  function RenderMorph() {
 
-  function RenderImage() {
     Object.values(channels.data).map((channel, index) => {
-      if (channel.datasets[0].data) {
+
+
+      if (channel.datasets[0].data) { 
+
+        //only left frontal channel
         if (index === 1) {
           window.psd = channel.datasets[0].data;
           window.freqs = channel.xLabels;
@@ -183,47 +271,94 @@ export function renderModule(channels) {
             window.bins = channel.xLabels.length;
           } 
           if (window.freqs) {
-            //only left frontal channel
+            
+            // timer to only animate psd sample every 'delay' 
             if (window.firstAnimate) {
-              console.log('FirstAnimate');
               window.startTime = (new Date()).getTime();
               window.firstAnimate = false; 
             }
             let now = (new Date()).getTime();
-            // console.log(now-window.startTime)
-            if (now - window.startTime > delay) {
-              console.log('New PSD Sent in')
-              model_runner.generate(window.psd)
+            if (now - window.startTime > learningSettings.morphDelay) {
               window.startTime =  (new Date()).getTime();
+
+              if (window.thisFace) {
+                //psd passed into the model generator function
+                model_runner.generate(window.psd, learningSettings)
+              }
             }
           }
         }
-      } 
-    return null
+      }
+      return null
     });
+
+    function handleDampingOfChangeRangeSliderChange(value) {
+      setLearningSettings(prevState => ({...prevState, dampingOfChange: value}));
+    }
+
+    function handleMorphDelayRangeSliderChange(value) {
+      setLearningSettings(prevState => ({...prevState, morphDelay: value}));
+    }
+
+    return( 
+      <React.Fragment>      
+        <RangeSlider 
+          disabled={window.isprojecting}
+          min={1} step={1} max={100} 
+          label={'Damping Of Morphing Change: ' + learningSettings.dampingOfChange} 
+          value={learningSettings.dampingOfChange} 
+          onChange={handleDampingOfChangeRangeSliderChange} 
+        />
+        <RangeSlider 
+          disabled={window.isprojecting}
+          min={50} step={50} max={1000} 
+          label={'Morphing Frequency (ms): ' + learningSettings.morphDelay} 
+          value={learningSettings.morphDelay} 
+          onChange={handleMorphDelayRangeSliderChange} 
+        />        
+      </React.Fragment>
+    )
   }
 
   return (
     <React.Fragment>
       <Card >
         <Card.Section>
-         {WebcamCapture()}
-         {RenderImage()}
-          <Canvas />       
+        {WebcamCapture()}
+        {[...Array(learningSettings.numProjections)].map((x, i) => 
+          <Canvas canvas={["#" + i]} key={i} /> // loop to create multiple canvases
+        )} 
+   
+        </Card.Section>
+     
+        <Card.Section>
+          <TextContainer>
+          <p> {[ "3) Then connect to EEG to morph face" ]} </p>
+          </TextContainer>          
+          {RenderMorph()}
+          <Canvas canvas="other_canvas"/>        
           <ButtonGroup>
             <Button
               primary = {window.psd}
               disabled={!window.psd}
               onClick={() => {
-                model_runner.reseed(model_name)
+                model_runner.reseed(learningSettings.modelName)
               }}
             >
-              {'Click to regenerate'}
+              {'Seed from Random Face'}
             </Button>
+            <Button
+              primary = {window.psd}
+              disabled={!window.psd | !window.tfout["#0"]}
+              onClick={() => {
+                model_runner.webseed(learningSettings.modelName, learningSettings.numProjections)
+              }}
+            >
+              {'Seed from Webcam Best Fit'}
+            </Button>            
           </ButtonGroup>
-        </Card.Section>
+        </Card.Section>        
       </Card>
-
     </React.Fragment>
   );
 }

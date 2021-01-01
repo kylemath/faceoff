@@ -1,7 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 
 // Gan Stuff
-
 let all_model_info = {
     dcgan64: {
         description: 'DCGAN, 64x64 (16 MB)',
@@ -40,8 +39,6 @@ function image_enlarge(y, draw_multiplier) {
     ).reshape([size * draw_multiplier, size * draw_multiplier, 3])
 }
 
-let dampingOfChange = 10; //smaller is more change
-
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
@@ -57,11 +54,10 @@ function resolve_after_ms(x, ms) {
     });
 }
 
-async function computing_generate_main(model, size, draw_multiplier, latent_dim, psd) {
+async function computing_generate_main(model, size, draw_multiplier, latent_dim, psd, settings) {
     if (psd) {
         const zNormalized = tf.tidy(() => {
             //convert psd to tensor
-            console.log('Converting psd to tensor')
             const z = tf.tensor(psd, [1, latent_dim])
 
             //compute mean and variance
@@ -73,7 +69,7 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
 
             //subtract mean and divide by SD to normalize
             var zMeanSubtract = z.sub(psdMean);
-            var zNormalized = zMeanSubtract.div(psdSD).div(dampingOfChange);
+            var zNormalized = zMeanSubtract.div(psdSD).div(settings.dampingOfChange);
             return zNormalized;
         });
 
@@ -84,12 +80,101 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
             window.thisFace = window.thisFace.sub(zNormalized);
         }
 
-        console.log('Projecting latent vector')
+        // used current tensor to make face, enlarge and plot
         const y = model.predict(window.thisFace).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
         const outPixels = image_enlarge(y, draw_multiplier);
-        let c = document.getElementById("the_canvas");
-        await tf.browser.toPixels(outPixels, c);
+        let d = document.getElementById("other_canvas");
+        await tf.browser.toPixels(outPixels, d);        
     };
+}
+
+
+const tensor_length = function(tensor, dim) {
+    return tf.abs(tf.sub(tf.norm(tensor), tf.sqrt(dim)))
+}
+
+
+window.tfout = {};
+
+async function computing_fit_target_latent_space(model, draw_multiplier, latent_dim, input_image, canvas, settings) {
+    console.log('Finding the closest vector in latent space on canvas: ', canvas[0]);
+
+    // Define the two canvas names
+    let the_canvas = document.getElementById(canvas);
+
+    // Get the generated image from other canvas and convert to tensor
+    // target_image is a Uint8ClampedArray
+    // target_image_tensor is a [256, 256, 3] Int32Array, range [0, 255]
+    // old call to get from canvas
+    // let target_image = ctx.getImageData(0, 0, 256, 256);
+    let target_image_tensor = input_image;
+
+    // Create new random vector in latent space to start from
+    // z is sampled from normal distribution
+    // mean of 0, standard deviation of 1
+    const z = tf.variable(tf.randomNormal([1, latent_dim]));
+  
+    const generate_and_enlarge_image = function(first_time) {
+        // rescale only on first generation by multiplying by 255
+        const scaler = (first_time === true) ? 255 : 1
+
+        // model outputs values between [-1, 1]
+        const y_unnormalize = model.predict(z).squeeze().transpose([1, 2, 0]);
+        // scale the values to the range [0, 1]
+        const y_small = y_unnormalize.div(tf.scalar(2)).add(tf.scalar(0.5)).mul(scaler);
+        // Enlarge the image to fit the canvas
+        let y = image_enlarge(y_small, draw_multiplier);
+
+        return y;
+    }
+
+    const loss = function(pred, label) {
+        return pred.sub(label).abs().mean();
+    }
+
+    const _loss_function = function() {
+        // Generate Random image and compute loss
+        const first_time = true;
+        const predicted_image_tensor = generate_and_enlarge_image(first_time);
+
+        var computed_loss = loss(predicted_image_tensor, target_image_tensor);
+
+         // Add regularization to the loss function
+        const regularize = tensor_length(z, latent_dim);
+        computed_loss = tf.add(computed_loss, regularize);
+
+        return computed_loss
+    }
+
+    // Define an optimizer
+    const optimizer = tf.train.adam(settings.learningRate);
+    console.log(optimizer)
+    // Train the model.
+    for (let i = 0; i < settings.trainingSteps; i++ ) {
+
+        // Compute and apply gradients
+        let {value, grads} = optimizer.computeGradients(_loss_function, [z]);
+        value.data().then(l => {
+            console.log('Canvas: ', canvas[0], ', Training Step: ', i, 'Loss: ', 
+                Number.parseFloat(l[0]).toPrecision(5), 'LearningRate: ', settings.learningRate)
+        })
+        optimizer.applyGradients(grads);
+
+        // put image on canvas periodically and at end
+        if (i % settings.stepsPerImage === 0 | i === settings.trainingSteps) {
+
+            // Generate the new best image
+            let first_time = false;
+            let y = generate_and_enlarge_image(first_time) 
+
+            // Print it to the top canvas
+            await tf.browser.toPixels(y, the_canvas);
+        }
+    }
+
+    //save to window to load into morpher
+    console.log('writing canvas to canvas logger', canvas)
+    window.tfout[canvas] = z;
 }
 
 export class ModelRunner {
@@ -104,7 +189,6 @@ export class ModelRunner {
         this.model_name = model_name;
         let model_info = all_model_info[model_name];
         let model_url = model_info.model_url,
-            model_latent_dim = model_info.model_latent_dim,
             description = model_info.description;
 
 
@@ -114,7 +198,6 @@ export class ModelRunner {
             this.model_promise = this.model_promise_cache[model_name];
         } else {
             this.model_promise = tf.loadLayersModel(model_url);
-            window.thisFace = tf.randomNormal([1, model_latent_dim]);
 
             this.model_promise.then((model) => {
                 return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
@@ -134,17 +217,49 @@ export class ModelRunner {
         window.thisFace = tf.randomNormal([1, model_latent_dim]);
     }
 
-    generate(psd) {
+    webseed(model_name, num_projections) {
+        this.model_name = model_name;
+
+        console.log(`Seeding model from Webcam image `);
+        // Replace with something like
+        
+        // add faces for each face in a canvas, then divide by number
+        console.log(window.tfout)
+        for (var key in window.tfout) {
+            if (key === "#0") {
+                window.thisFace = window.tfout[key]
+            } else {          
+                window.thisFace = tf.add(window.thisFace, window.tfout[key])
+            }
+        }
+        window.thisFace = tf.div(window.thisFace, tf.scalar(num_projections) )
+        window.thisFace.print()
+    }
+
+    project(model_name, input_image, canvas, settings) {
+        let model_info = all_model_info[this.model_name];
+        let model_latent_dim = model_info.model_latent_dim,
+            draw_multiplier = model_info.draw_multiplier;
+       
+        this.model_promise.then((model) => {
+            return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
+        }).then((model) => {
+            return computing_fit_target_latent_space(model, draw_multiplier, model_latent_dim, input_image, canvas, settings)        
+        });
+        
+
+    }
+
+    generate(psd, settings) {
         let model_info = all_model_info[this.model_name];
         let model_size = model_info.model_size,
             model_latent_dim = model_info.model_latent_dim,
             draw_multiplier = model_info.draw_multiplier;
 
-        // console.log('Generating image...');
         this.model_promise.then((model) => {
             return resolve_after_ms(model, ui_delay_before_tf_computing_ms);
         }).then((model) => {
-            return computing_generate_main(model, model_size, draw_multiplier, model_latent_dim, psd);
+            return computing_generate_main(model, model_size, draw_multiplier, model_latent_dim, psd, settings);
         });
     }
 }
