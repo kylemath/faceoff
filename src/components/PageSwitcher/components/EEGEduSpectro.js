@@ -354,7 +354,7 @@ export function RenderModule(channels) {
                 model_runner.webseed(learningSettings.modelName, learningSettings.numProjections)
               }}
             >
-              {'Seed from Webcam Image'}
+              {'Seed from Webcam Best Fit'}
             </Button>            
           </ButtonGroup>
         </Card.Section>        
