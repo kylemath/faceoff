@@ -426,7 +426,7 @@ export function RenderModule(channels) {
 
         </Card.Section>
      
-        <Card.Section title={'Morph the face with your brain'}>
+        <Card.Section title={'Morph your face with your brain'}>
           <TextContainer>
           <p> {[
                 "Finally we can use the EEG to morph this digital version of your face, or a random face. ",
