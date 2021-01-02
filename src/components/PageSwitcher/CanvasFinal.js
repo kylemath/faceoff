@@ -7,10 +7,7 @@ const Canvas = props => {
   const { draw, canvas, ...rest } = props
   const canvasRef = useRef(null)
 
-  const styles = {
-  	width:'50%',
-  	backgroundColor: "White"
-  }
+  const styles = {	width:'50%'  }
   return (
   	<canvas style={styles} id={canvas} ref={canvasRef} {...rest}/>
   )
