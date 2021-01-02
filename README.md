@@ -1,9 +1,25 @@
-# LaGS-BS
+# FaceOff
 Latent GAN State Brain Surfer
 
 The brain is full of all the patterns we could ever need
+live at https://faceoff.eegedu.com
+
+<p align="center">
+<img src="animation.gif" alt="Faceoff" width=500 />
+</p>
+
+
+FaceOff is an interactive art piece focused on the relationship between real and artificial brains. You will use your webcam to take in image of your face, and allow an artificial intelligence to find a digital match, a barcode that matches your face. You will then use your own brain waves to make slight changes in this digital barcode, and watch as your face morphs before your eyes.
+
+<p align="center">
+<img src="screenShot.png" alt="Faceoff" width=500 />
+</p>
+
+# Plan 
 
 https://colab.research.google.com/drive/17HvdPhwhe1cmkTWnA50vyOmMlWHhg6_P?usp=sharing
+
+https://alantian.github.io/ganshowcase/
 
 latence space brain surfer
 
@@ -96,30 +112,11 @@ serve -s build
 1. Open Javascript console
 1. Look for errors in console
 1. Connect Mock data stream by clicking Connect button
-1. Run through the `checkFunction` below with Mock data. 
-1. Disconnect Mock data stream
-1. Turn on Interaxon Muse headband
-1. Connect Muse data stream
-1. Repeat the `checkFunction` below with Muse data. 
-
-```sh
-# Pseudocode for checking EEGEdu functionality
-checkFunction = {
-    view raw data 
-    change sliders 
-    make sure data changes and no errors
-    click spectra
-    move sliders
-    make sure changes
-    click bands
-    move sliders
-    make sure changes
-}
-```
+1. step through website features while reading console
 
 ## Deployment
 
-[EEGEdu](https://eegedu.com) is running on [Firebase](https://firebase.google.com/) and deployment happens automagically using GitHub post-commit hooks, or [Actions](https://github.com/kylemath/EEGEdu/actions), as they are commonly called. You can see how the application is build and deployed by [inspecting the workflow](https://github.com/kylemath/EEGEdu/blob/master/.github/workflows/workflow.yml). 
+[FaceOff](https://faceoff.eegedu.com) is running on [Firebase](https://firebase.google.com/) and deployment happens automagically using GitHub post-commit hooks, or [Actions](https://github.com/kylemath/Faceoff/actions), as they are commonly called. You can see how the application is build and deployed by [inspecting the workflow](https://github.com/kylemath/Faceoff/blob/master/.github/workflows/workflow.yml). 
 
 Currently this automagic deployment is not working, so we can deploy to firebase manually:
 
