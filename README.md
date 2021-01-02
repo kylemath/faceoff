@@ -4,7 +4,7 @@ Latent GAN State Brain Surfer
 The brain is full of all the patterns we could ever need
 live at https://faceoff.eegedu.com
 
-<p>
+<p align="center">
 <img src="animation.gif" alt="Faceoff" width=500 />
 </p>
 
