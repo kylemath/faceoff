@@ -18,13 +18,18 @@ FaceOff is an interactive art piece focused on the relationship between real and
 
 EEG - 
 https://choosemuse.com/
+
 https://github.com/urish/muse-js
+
 https://github.com/neurosity/eeg-pipes
+
 https://github.com/kylemath/eegedu
 
 UX
 https://github.com/facebook/react
+
 https://github.com/Shopify/polaris-react
+
 https://www.npmjs.com/package/react-full-screen
 
 Webcam
