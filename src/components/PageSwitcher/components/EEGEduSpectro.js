@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { catchError, multicast } from "rxjs/operators";
 
 import { Card, RangeSlider, Button, ButtonGroup, TextContainer, Select} from "@shopify/polaris";
@@ -15,6 +15,7 @@ import {
 import * as generalTranslations from "./translations/en";
 
 import Canvas from '../Canvas'
+import CanvasFinal from '../CanvasFinal'
 import * as funGAN from '../GAN'
 import Webcam from "react-webcam"
 import * as tf from '@tensorflow/tfjs';
@@ -22,6 +23,7 @@ import * as tf from '@tensorflow/tfjs';
 import { FullScreen, useFullScreenHandle } from "react-full-screen"
 
 let model_runner = new funGAN.ModelRunner();
+model_runner.setup_model('dcgan64')
 
 export function getSettings () {
   return {
@@ -41,12 +43,13 @@ export function getLearningSettings () {
     trainingSteps: 150, 
     stepsPerImage: 5,
     numProjections: 1, //number of latent projection of webcam image
-    dampingOfChange: 10, //smaller is more change
-    morphDelay: 50, //msec between images in the morph sequence, can be low for 64, but should be 1000 for 128
+    dampingOfChange: 20, //smaller is more change
+    morphDelay: 25, //msec between images in the morph sequence, can be low for 64, but should be 1000 for 128
     modelName: 'dcgan64'
   }
 };
 
+window.step = 0; 
 
 export function buildPipe(Settings) {
   if (window.subscriptionSpectro) window.subscriptionSpectro.unsubscribe();
@@ -239,7 +242,7 @@ export function RenderModule(channels) {
           />
           <RangeSlider 
             disabled={window.isprojecting}
-            min={2} step={1} max={learningSettings.trainingSteps} 
+            min={2} step={10} max={learningSettings.trainingSteps} 
             label={'Plotting frequency (every n images): ' + learningSettings.stepsPerImage} 
             value={learningSettings.stepsPerImage} 
             onChange={handleStepsPerImageRangeSliderChange} 
@@ -307,13 +310,13 @@ export function RenderModule(channels) {
         <RangeSlider 
           disabled={window.isprojecting}
           min={1} step={1} max={100} 
-          label={'Damping Of Morphing Change: ' + learningSettings.dampingOfChange} 
+          label={'Damping Of Morphing Change (<-- more change): ' + learningSettings.dampingOfChange} 
           value={learningSettings.dampingOfChange} 
           onChange={handleDampingOfChangeRangeSliderChange} 
         />
         <RangeSlider 
           disabled={window.isprojecting}
-          min={50} step={50} max={1000} 
+          min={10} step={10} max={1000} 
           label={'Morphing Frequency (ms): ' + learningSettings.morphDelay} 
           value={learningSettings.morphDelay} 
           onChange={handleMorphDelayRangeSliderChange} 
@@ -323,6 +326,34 @@ export function RenderModule(channels) {
   }
 
   const handle = useFullScreenHandle();
+  const keyFunction = useCallback((event) => {
+    if(event.keyCode === 82) {  //r
+      console.log('You pressed R')
+      model_runner.reseed(learningSettings.modelName)
+
+    }
+    if(event.keyCode === 87) {  //w
+      console.log('You pressed W')
+      model_runner.webseed(learningSettings.modelName, learningSettings.numProjections)
+
+    }
+  }, [learningSettings]);
+
+  useEffect(() => {
+    document.addEventListener("keydown", keyFunction, false);
+
+    return () => {
+      document.removeEventListener("keydown", keyFunction, true);
+    };
+  }, [keyFunction]);
+
+  const styles = {
+    color:"white"
+  }
+
+  function handleTrainingStepRangeSliderChange(value) {
+      console.log('TrainingStepSliderHandle', value)
+  }
 
   return (
     <React.Fragment>
@@ -332,7 +363,14 @@ export function RenderModule(channels) {
         {[...Array(learningSettings.numProjections)].map((x, i) => 
           <Canvas canvas={["#" + i]} key={i} /> // loop to create multiple canvases
         )} 
-   
+        <RangeSlider 
+          disabled={!window.thisFace}
+          min={1} step={1} max={learningSettings.trainingSteps} 
+          label={'Training Step: ' + window.step} 
+          value={window.step} 
+          onChange={handleTrainingStepRangeSliderChange} 
+        />
+
         </Card.Section>
      
         <Card.Section>
@@ -342,7 +380,8 @@ export function RenderModule(channels) {
           {RenderMorph()}
 
           <FullScreen handle={handle} >
-            <Canvas canvas="other_canvas"/>  
+            <CanvasFinal canvas="other_canvas"/>  
+            <p style={styles}>Press R to reseed from random, W to reseed from webcam </p>
           </FullScreen>      
 
           <ButtonGroup>

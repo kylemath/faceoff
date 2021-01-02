@@ -101,6 +101,8 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
     // Define the two canvas names
     let the_canvas = document.getElementById(canvas);
+    var ctx = the_canvas.getContext("2d");
+    ctx.font = "60px Arial";
 
     // Get the generated image from other canvas and convert to tensor
     // target_image is a Uint8ClampedArray
@@ -159,6 +161,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
                 Number.parseFloat(l[0]).toPrecision(5), 'LearningRate: ', settings.learningRate)
         })
         optimizer.applyGradients(grads);
+        window.step = i;
 
         // put image on canvas periodically and at end
         if (i % settings.stepsPerImage === 0 | i === settings.trainingSteps) {
@@ -169,6 +172,8 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
             // Print it to the top canvas
             await tf.browser.toPixels(y, the_canvas);
+            ctx.fillText(i, 2, 2);
+
         }
     }
 
