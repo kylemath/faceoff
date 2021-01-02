@@ -159,6 +159,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
                 Number.parseFloat(l[0]).toPrecision(5), 'LearningRate: ', settings.learningRate)
         })
         optimizer.applyGradients(grads);
+        window.step = i;
 
         // put image on canvas periodically and at end
         if (i % settings.stepsPerImage === 0 | i === settings.trainingSteps) {
