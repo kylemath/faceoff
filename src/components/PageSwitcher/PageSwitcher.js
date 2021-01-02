@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import { MuseClient } from "muse-js";
-import { Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/polaris";
+import { Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 import * as generalTranslations from "./components/translations/en";
@@ -12,17 +12,8 @@ window.firstAnimate = true;
 
 export function PageSwitcher() {
 
-  // For auxEnable settings
-  const [checked, setChecked] = useState(false);
-  const handleChange = useCallback((newChecked) => setChecked(newChecked), []);
-  window.enableAux = checked;
-  if (window.enableAux) {
-    window.nchans = 5;
-  } else {
-    window.nchans = 4;
-  }
-  let showAux = false; // if it is even available to press (to prevent in some modules)
 
+  window.nchans = 4;
   // data pulled out of multicast$
   const [spectroData, setSpectroData] = useState(emptyAuxChannelData);
 
@@ -71,11 +62,22 @@ export function PageSwitcher() {
     window.location.reload();
   }
 
+  const strings = {
+    "museOn": [
+      "If you do not have a Muse headband you can click the Mock Data button to use simluated data. ",
+      "The first step will be to turn on your Muse headband and click the connect button. ",
+      "This will open a screen and will list available Muse devices. ",
+      "Select the serial number written on your Muse. ",
+      "The data will begin streaming from your brain, which we will use in a few steps."
+    ]
+  }
+
   // Render the entire page using above functions
   return (
     <React.Fragment>
       <Card sectioned>
         <Stack>
+          <p>{strings.museOn}</p>
           <ButtonGroup>
             <Button
               primary={status === generalTranslations.connect}
@@ -106,18 +108,10 @@ export function PageSwitcher() {
               {generalTranslations.disconnect}
             </Button>
           </ButtonGroup>
-          <Checkbox
-            label="Enable Muse Auxillary Channel"
-            checked={checked}
-            onChange={handleChange}
-            disabled={!showAux || status !== generalTranslations.connect}
-          />
         </Stack>
       </Card>
       <funSpectro.RenderModule data={spectroData}/>
-
       {funSpectro.renderSliders(setSpectroData, setSpectroSettings, status, spectroSettings)}
-
     </React.Fragment>
   );
 }

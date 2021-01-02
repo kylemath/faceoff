@@ -170,7 +170,6 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
             // Print it to the top canvas
             await tf.browser.toPixels(y, the_canvas);
-
         }
     }
 
