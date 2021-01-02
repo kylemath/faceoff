@@ -84,7 +84,8 @@ async function computing_generate_main(model, size, draw_multiplier, latent_dim,
         const y = model.predict(window.thisFace).squeeze().transpose([1, 2, 0]).div(tf.scalar(2)).add(tf.scalar(0.5));
         const outPixels = image_enlarge(y, draw_multiplier);
         let d = document.getElementById("other_canvas");
-        await tf.browser.toPixels(outPixels, d);        
+        await tf.browser.toPixels(outPixels, d);     
+        await tf.nextFrame();   
     };
 }
 
@@ -170,6 +171,7 @@ async function computing_fit_target_latent_space(model, draw_multiplier, latent_
 
             // Print it to the top canvas
             await tf.browser.toPixels(y, the_canvas);
+            await tf.nextFrame();   
         }
     }
 
