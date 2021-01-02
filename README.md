@@ -8,14 +8,35 @@ live at https://faceoff.eegedu.com
 <img src="animate.gif" alt="Faceoff" width=500 />
 </p>
 
-
 FaceOff is an interactive art piece focused on the relationship between real and artificial brains. You will use your webcam to take in image of your face, and allow an artificial intelligence to find a digital match, a barcode that matches your face. You will then use your own brain waves to make slight changes in this digital barcode, and watch as your face morphs before your eyes.
 
 <p align="center">
 <img src="screenShot.png" alt="Faceoff" width=500 />
 </p>
 
-# Plan 
+# Stack
+
+EEG - 
+https://choosemuse.com/
+https://github.com/urish/muse-js
+https://github.com/neurosity/eeg-pipes
+https://github.com/kylemath/eegedu
+
+UX
+https://github.com/facebook/react
+https://github.com/Shopify/polaris-react
+https://www.npmjs.com/package/react-full-screen
+
+Webcam
+https://www.npmjs.com/package/react-webcam
+
+Machine Learning:
+https://github.com/tensorflow/tfjs
+
+Deploy:
+https://github.com/firebase/
+
+# Plan and Inspiration
 
 https://colab.research.google.com/drive/17HvdPhwhe1cmkTWnA50vyOmMlWHhg6_P?usp=sharing
 
