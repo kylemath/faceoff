@@ -1,18 +1,8 @@
 # FaceOff
-Latent GAN State Brain Surfer
+Using deep learning to optimize stimuli to target brain states
 
-The brain is full of all the patterns we could ever need
-live at https://faceoff.eegedu.com
-
-<p align="center">
-<img src="animate.gif" alt="Faceoff" width=500 />
-</p>
-
-FaceOff is an interactive art piece focused on the relationship between real and artificial brains. You will use your webcam to take in image of your face, and allow an artificial intelligence to find a digital match, a barcode that matches your face. You will then use your own brain waves to make slight changes in this digital barcode, and watch as your face morphs before your eyes.
-
-<p align="center">
-<img src="screenShot.png" alt="Faceoff" width=500 />
-</p>
+https://science.sciencemag.org/content/sci/364/6439/eaav9436.full.pdf
+https://www.biorxiv.org/content/10.1101/516484v1.full.pdf
 
 # Stack
 
