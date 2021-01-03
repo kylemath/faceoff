@@ -1,8 +1,8 @@
 # FaceOff
 Using deep learning to optimize stimuli to target brain states
 
-https://science.sciencemag.org/content/sci/364/6439/eaav9436.full.pdf
-https://www.biorxiv.org/content/10.1101/516484v1.full.pdf
+* https://science.sciencemag.org/content/sci/364/6439/eaav9436.full.pdf
+* https://www.biorxiv.org/content/10.1101/516484v1.full.pdf
 
 # Stack
 
