@@ -1,7 +1,7 @@
 # FaceOff
 Using deep learning to optimize stimuli to target brain states
 
-![demo](https://faceoff.eegedu.com)
+![demo](animate 22-16-16-923.gif)
 
 Live Demo at : https://faceoff.eegedu.com/
 
